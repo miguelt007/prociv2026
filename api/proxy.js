@@ -1,10 +1,9 @@
-import fetch from 'node-fetch';
-
 export default async function handler(req, res) {
     try {
         // URL correta da API
         const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
+        // fetch nativo do Node 18+
         const response = await fetch(API_URL);
 
         if (!response.ok) {
