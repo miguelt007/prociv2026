@@ -16,19 +16,21 @@
 body { font-family: Arial; margin:0; background:#f4f6f9; }
 header { background:#1e293b; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
 #statusDot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-left:8px; background:red; }
+
 .cards { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:15px; padding:20px; }
 .card { background:white; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .card h3 { margin:0; font-size:14px; color:#666; }
 .card p { font-size:22px; margin:5px 0 0 0; font-weight:bold; }
 
-.main { display:flex; margin:20px; gap:15px; }
-#filters { width:250px; background:white; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-#map { flex:1; height:400px; border-radius:12px; }
+.main { display:flex; gap:15px; margin:20px; }
+#filters { width:250px; background:white; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); height:600px; overflow-y:auto; }
+#map { flex:1; height:600px; border-radius:12px; }
 
-table { width:100%; border-collapse:collapse; background:white; margin:20px; }
+table { width:100%; border-collapse:collapse; background:white; margin:20px 20px 40px 20px; }
 th, td { padding:8px; border-bottom:1px solid #ddd; font-size:12px; }
 th { background:#1e293b; color:white; }
 footer { text-align:center; padding:15px; background:#1e293b; color:white; margin-top:20px; }
+
 .badge { padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold; margin:2px 0; display:inline-block;}
 </style>
 </head>
@@ -102,7 +104,7 @@ function updateDateTime(){
 setInterval(updateDateTime,1000);
 updateDateTime();
 
-// Estado online/offline
+// Status online/offline
 function setOnlineStatus(online){
     document.getElementById("statusDot").style.background = online ? "limegreen" : "red";
 }
@@ -125,7 +127,7 @@ function getEstadoBadge(estado){
     return `<span class="badge" style="background:${cor};color:${texto}">${estado}</span>`;
 }
 
-// Marker seguro
+// Marker color
 function getMarkerColor(estado){
     if(!estado) return "blue";
     if(estado==="Em Curso") return "red";
@@ -149,7 +151,6 @@ async function fetchGeoData(){
 
         setOnlineStatus(true);
 
-        // Aplica filtro
         const filterEstado = document.getElementById("filterEstado").value;
         let features = data.features;
         if(filterEstado){
@@ -221,7 +222,7 @@ function updateDashboard(features){
     document.getElementById("totalSignificativas").innerText = 0;
 }
 
-// Atualiza quando filtro muda
+// Filtro Estado
 document.getElementById("filterEstado").addEventListener("change", fetchGeoData);
 
 // Inicializa fetch
