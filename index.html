@@ -75,19 +75,16 @@ Fonte de dados: ANEPCAPI (via proxy local).
 </footer>
 
 <script>
-
-// Data e hora em tempo real
+// Data e hora
 function updateDateTime(){
-    document.getElementById("datetime").innerText =
-        new Date().toLocaleString("pt-PT");
+    document.getElementById("datetime").innerText = new Date().toLocaleString("pt-PT");
 }
 setInterval(updateDateTime,1000);
 updateDateTime();
 
 // Estado online/offline
 function setOnlineStatus(online){
-    document.getElementById("statusDot").style.background =
-        online ? "limegreen" : "red";
+    document.getElementById("statusDot").style.background = online ? "limegreen" : "red";
 }
 
 // Mapa
@@ -110,7 +107,7 @@ function getEstadoBadge(estado){
     return `<span class="badge" style="background:${cor};color:${texto}">${estado}</span>`;
 }
 
-// COR DO MARKER
+// Marker seguro
 function getMarkerColor(estado){
     if(!estado) return "blue";
     if(estado==="Em Curso") return "red";
@@ -121,13 +118,13 @@ function getMarkerColor(estado){
     return "cadetblue";
 }
 
-// FETCH VIA PROXY (AQUI ESTÁ A ALTERAÇÃO IMPORTANTE)
+// Fetch via proxy
 async function fetchGeoData(){
     try{
         const response = await fetch("/api/proxy");
         const data = await response.json();
 
-        if(!data.features){
+        if(!data || !data.features || !Array.isArray(data.features)){
             setOnlineStatus(false);
             return;
         }
@@ -136,72 +133,78 @@ async function fetchGeoData(){
         updateDashboard(data.features);
 
     }catch(error){
-        console.error(error);
+        console.error("Erro ao buscar dados:", error);
         setOnlineStatus(false);
     }
 }
 
+// Atualiza cartões, tabela e mapa de forma segura
 function updateDashboard(features){
 
     let totalOperacionais=0,totalVeiculos=0,totalAereos=0,totalAquaticos=0;
     let totalIncendios=0,totalSignificativas=0;
 
     document.getElementById("tableBody").innerHTML="";
+    // Remove markers anteriores de forma segura
     map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer); });
 
     features.forEach(f=>{
-        const p = f.properties || f.attributes || {};
-        const coords=f.geometry?.coordinates;
+        const p = f.properties || {};
+        const coords = f.geometry && Array.isArray(f.geometry.coordinates) ? f.geometry.coordinates : null;
 
-        totalOperacionais+=Number(p.Operacionais||0);
-        totalVeiculos+=Number(p.MeiosTerrestres||0);
-        totalAereos+=Number(p.MeiosAereos||0);
-        totalAquaticos+=Number(p.MeiosAquaticos||0);
+        // Totais
+        totalOperacionais += Number(p.Operacionais || 0);
+        totalVeiculos += Number(p.MeiosTerrestres || 0);
+        totalAereos += Number(p.MeiosAereos || 0);
+        totalAquaticos += Number(p.MeiosAquaticos || 0);
 
-        if(p.Especie){
-            const e=p.Especie.toLowerCase();
-            if(e.includes("incêndio")||e.includes("detritos")||e.includes("equipamentos"))
+        // Incêndios/Detritos/Equipamentos
+        if(typeof p.Especie === "string"){
+            const e = p.Especie.toLowerCase();
+            if(e.includes("incêndio") || e.includes("detritos") || e.includes("equipamentos"))
                 totalIncendios++;
         }
 
         if(p.Significativa==1) totalSignificativas++;
 
-        document.getElementById("tableBody").innerHTML+=`
+        // Adiciona linha na tabela
+        document.getElementById("tableBody").innerHTML += `
         <tr>
-        <td>${p.Data||"-"}</td>
-        <td>${p.Regiao||"-"}</td>
-        <td>${p.Concelho||"-"}</td>
-        <td>${p.Freguesia||"-"}</td>
-        <td>${p.Localidade||"-"}</td>
-        <td>${p.Tipo||"-"}</td>
+        <td>${p.Data || "-"}</td>
+        <td>${p.Regiao || "-"}</td>
+        <td>${p.Concelho || "-"}</td>
+        <td>${p.Freguesia || "-"}</td>
+        <td>${p.Localidade || "-"}</td>
+        <td>${p.Tipo || "-"}</td>
         <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
-        <td>${p.Operacionais||0}</td>
-        <td>${p.MeiosTerrestres||0}</td>
-        <td>${p.MeiosAereos||0}</td>
-        <td>${p.MeiosAquaticos||0}</td>
+        <td>${p.Operacionais || 0}</td>
+        <td>${p.MeiosTerrestres || 0}</td>
+        <td>${p.MeiosAereos || 0}</td>
+        <td>${p.MeiosAquaticos || 0}</td>
         </tr>`;
 
+        // Marker seguro
         if(coords){
             const icon=L.AwesomeMarkers.icon({
                 icon:'fire',
                 prefix:'fa',
                 markerColor:getMarkerColor(p.EstadoOcorrencia)
             });
-
             L.marker([coords[1],coords[0]],{icon}).addTo(map);
         }
     });
 
-    document.getElementById("totalOcorrencias").innerText=features.length;
-    document.getElementById("totalOperacionais").innerText=totalOperacionais;
-    document.getElementById("totalVeiculos").innerText=totalVeiculos;
-    document.getElementById("totalAereos").innerText=totalAereos;
-    document.getElementById("totalAquaticos").innerText=totalAquaticos;
-    document.getElementById("totalIncendios").innerText=totalIncendios;
-    document.getElementById("totalSignificativas").innerText=totalSignificativas;
+    // Atualiza cartões
+    document.getElementById("totalOcorrencias").innerText = features.length;
+    document.getElementById("totalOperacionais").innerText = totalOperacionais;
+    document.getElementById("totalVeiculos").innerText = totalVeiculos;
+    document.getElementById("totalAereos").innerText = totalAereos;
+    document.getElementById("totalAquaticos").innerText = totalAquaticos;
+    document.getElementById("totalIncendios").innerText = totalIncendios;
+    document.getElementById("totalSignificativas").innerText = totalSignificativas;
 }
 
-// Atualiza a cada 60s
+// Inicializa fetch e atualização periódica
 fetchGeoData();
 setInterval(fetchGeoData,60000);
 
