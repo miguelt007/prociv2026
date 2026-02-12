@@ -286,7 +286,7 @@ function updateDashboard(features) {
 
         table.innerHTML+=`
             <tr>
-                <td>${p.Data||"-"}</td>
+                <td>${p.DataInicioOcorrencia||"-"}</td>
                 <td>${p.Regiao||"-"}</td>
                 <td>${p.Concelho||"-"}</td>
                 <td>${p.Freguesia||"-"}</td>
@@ -303,7 +303,7 @@ function updateDashboard(features) {
         if(coords){
             const marker=L.marker([coords[1], coords[0]]).addTo(map);
             marker.bindPopup(`
-                <b>Data / Hora:</b> ${p.Data||'-'}<br>
+                <b>Data / Hora:</b> ${p.DataInicioOcorrencia||'-'}<br>
                 <b>Região:</b> ${p.Regiao||'-'}<br>
                 <b>Concelho:</b> ${p.Concelho||'-'}<br>
                 <b>Freguesia:</b> ${p.Freguesia||'-'}<br>
