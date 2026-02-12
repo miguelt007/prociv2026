@@ -98,22 +98,16 @@ Fonte de dados: ANEPCAPI (via proxy local).
 
 <script>
 // Data e hora
-function updateDateTime(){
-    document.getElementById("datetime").innerText = new Date().toLocaleString("pt-PT");
-}
+function updateDateTime(){ document.getElementById("datetime").innerText = new Date().toLocaleString("pt-PT"); }
 setInterval(updateDateTime,1000);
 updateDateTime();
 
 // Status online/offline
-function setOnlineStatus(online){
-    document.getElementById("statusDot").style.background = online ? "limegreen" : "red";
-}
+function setOnlineStatus(online){ document.getElementById("statusDot").style.background = online ? "limegreen" : "red"; }
 
 // Mapa
 const map = L.map('map').setView([39.5, -8], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© OpenStreetMap'
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap'}).addTo(map);
 
 // Badge Estado
 function getEstadoBadge(estado){
@@ -143,12 +137,7 @@ async function fetchGeoData(){
     try{
         const response = await fetch("/api/proxy");
         const data = await response.json();
-
-        if(!data || !data.features || !Array.isArray(data.features)){
-            setOnlineStatus(false);
-            return;
-        }
-
+        if(!data || !data.features) { setOnlineStatus(false); return; }
         setOnlineStatus(true);
 
         const filterEstado = document.getElementById("filterEstado").value;
@@ -158,57 +147,46 @@ async function fetchGeoData(){
         }
 
         updateDashboard(features);
-
-    }catch(error){
-        console.error("Erro ao buscar dados:", error);
-        setOnlineStatus(false);
-    }
+    }catch(e){ console.error(e); setOnlineStatus(false); }
 }
 
 // Atualiza cartões, tabela e mapa
 function updateDashboard(features){
-
-    let totalOperacionais=0,totalVeiculos=0,totalAereos=0;
-    let totalIncendios=0;
+    let totalOperacionais=0,totalVeiculos=0,totalAereos=0,totalAquaticos=0,totalIncendios=0,totalSignificativas=0;
 
     document.getElementById("tableBody").innerHTML="";
-    map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer); });
+    map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
 
     features.forEach(f=>{
         const p = f.properties || {};
-        const coords = f.geometry && Array.isArray(f.geometry.coordinates) ? f.geometry.coordinates : null;
+        const coords = f.geometry?.coordinates;
 
-        totalOperacionais += Number(p.Operacionais || 0);
-        totalVeiculos += Number(p.MeiosTerrestres || 0);
-        totalAereos += Number(p.MeiosAereos || 0);
+        totalOperacionais += Number(p.Operacionais||0);
+        totalVeiculos += Number(p.MeiosTerrestres||0);
+        totalAereos += Number(p.MeiosAereos||0);
 
         if(typeof p.Especie === "string"){
             const e = p.Especie.toLowerCase();
-            if(e.includes("incêndio") || e.includes("detritos") || e.includes("equipamentos"))
-                totalIncendios++;
+            if(e.includes("incêndio") || e.includes("detritos") || e.includes("equipamentos")) totalIncendios++;
         }
 
         document.getElementById("tableBody").innerHTML += `
         <tr>
-        <td>${p.Data || "-"}</td>
-        <td>${p.Regiao || "-"}</td>
-        <td>${p.Concelho || "-"}</td>
-        <td>${p.Freguesia || "-"}</td>
-        <td>${p.Localidade || "-"}</td>
-        <td>${p.Tipo || "-"}</td>
+        <td>${p.Data||"-"}</td>
+        <td>${p.Regiao||"-"}</td>
+        <td>${p.Concelho||"-"}</td>
+        <td>${p.Freguesia||"-"}</td>
+        <td>${p.Localidade||"-"}</td>
+        <td>${p.Tipo||"-"}</td>
         <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
-        <td>${p.Operacionais || 0}</td>
-        <td>${p.MeiosTerrestres || 0}</td>
-        <td>${p.MeiosAereos || 0}</td>
-        <td>0</td>
+        <td>${p.Operacionais||0}</td>
+        <td>${p.MeiosTerrestres||0}</td>
+        <td>${p.MeiosAereos||0}</td>
+        <td>${p.MeiosAquaticos||0}</td>
         </tr>`;
 
         if(coords){
-            const icon = L.AwesomeMarkers.icon({
-                icon:'fire',
-                prefix:'fa',
-                markerColor:getMarkerColor(p.EstadoOcorrencia)
-            });
+            const icon = L.AwesomeMarkers.icon({icon:'fire', prefix:'fa', markerColor:getMarkerColor(p.EstadoOcorrencia)});
             L.marker([coords[1], coords[0]], {icon}).addTo(map);
         }
     });
@@ -217,9 +195,9 @@ function updateDashboard(features){
     document.getElementById("totalOperacionais").innerText = totalOperacionais;
     document.getElementById("totalVeiculos").innerText = totalVeiculos;
     document.getElementById("totalAereos").innerText = totalAereos;
-    document.getElementById("totalAquaticos").innerText = 0;
+    document.getElementById("totalAquaticos").innerText = totalAquaticos;
     document.getElementById("totalIncendios").innerText = totalIncendios;
-    document.getElementById("totalSignificativas").innerText = 0;
+    document.getElementById("totalSignificativas").innerText = totalSignificativas;
 }
 
 // Filtro Estado
