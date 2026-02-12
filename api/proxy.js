@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const apiUrl = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+  const apiUrl = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=0=0&outFields=*&resultRecordCount=10000";
 
   try {
     const response = await fetch(apiUrl);
