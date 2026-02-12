@@ -36,7 +36,6 @@ body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #f4f6f
 .badge.aereos { background: #3b82f6; }
 .badge.terrestres { background: #f97316; }
 .badge.aquaticos { background: #22c55e; }
-.badge.significativas { background: #6b7280; }
 .badge.operacionais { background: #1e40af; }
 
 /* FILTROS + MAPA */
@@ -112,11 +111,6 @@ footer { text-align: center; padding: 15px; background: #1e3a8a; color: white; f
             <p>Total Incêndios / Detritos / Equipamentos</p>
             <h2 id="totalIncendios"><i class="fas fa-fire"></i> 0</h2>
             <span class="badge incendios"><i class="fas fa-fire"></i></span>
-        </div>
-        <div class="card">
-            <p>Significativas</p>
-            <h2 id="totalSignificativas"><i class="fas fa-exclamation-triangle"></i> 0</h2>
-            <span class="badge significativas"><i class="fas fa-exclamation-triangle"></i></span>
         </div>
     </div>
 
@@ -259,7 +253,7 @@ function getEstadoBadge(estado) {
 
 // ===== ATUALIZAR DASHBOARD =====
 function updateDashboard(features) {
-    let totalAereos=0, totalOperacionais=0, totalVeiculos=0, totalAquaticos=0, totalIncendios=0, totalSignificativas=0;
+    let totalAereos=0, totalOperacionais=0, totalVeiculos=0, totalAquaticos=0, totalIncendios=0;
     const table = document.getElementById('tableBody');
     table.innerHTML="";
 
@@ -282,9 +276,7 @@ function updateDashboard(features) {
             }
         }
 
-        if(p.Significativa===1||(p.Significativa && p.Significativa.toString().toLowerCase()==="sim")) totalSignificativas++;
-
-        table.innerHTML+=`
+         table.innerHTML+=`
             <tr>
                 <td>${p.DataInicioOcorrencia||"-"}</td>
                 <td>${p.Regiao||"-"}</td>
@@ -325,7 +317,6 @@ function updateDashboard(features) {
     document.getElementById('totalVeiculos').innerHTML = `<i class="fas fa-truck"></i> ${totalVeiculos}`;
     document.getElementById('totalAquaticos').innerHTML = `<i class="fas fa-water"></i> ${totalAquaticos}`;
     document.getElementById('totalIncendios').innerHTML = `<i class="fas fa-fire"></i> ${totalIncendios}`;
-    document.getElementById('totalSignificativas').innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${totalSignificativas}`;
 }
 
 // Buscar dados da API inicialmente e atualizar a cada 60s
