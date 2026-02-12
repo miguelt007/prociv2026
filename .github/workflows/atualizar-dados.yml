@@ -1,0 +1,22 @@
+name: Atualizar dados ANEPC
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # a cada 15 minutos
+  workflow_dispatch:
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Baixar dados da API
+        run: |
+          curl -s -o dados.json "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*"
+      - name: Commit e push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add dados.json
+          git commit -m "Atualizar dados ANEPC $(date +"%Y-%m-%d %H:%M")" || echo "Sem alterações"
+          git push
