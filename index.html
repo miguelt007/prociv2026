@@ -258,74 +258,93 @@ function getEstadoBadge(estado) {
 }
 
 // ===== ATUALIZAR DASHBOARD =====
-function updateDashboard(features) {
-    let totalAereos=0, totalOperacionais=0, totalVeiculos=0, totalAquaticos=0, totalIncendios=0, totalSignificativas=0;
-    const table = document.getElementById('tableBody');
-    table.innerHTML="";
+function parseAPIData(dataStr){
+    // Converte "DD/MM/YYYY HH:MM" em objeto Date
+    const [datePart, timePart] = dataStr.split(' ');
+    const [day, month, year] = datePart.split('/').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes);
+}
 
-    map.eachLayer(layer => { if(layer instanceof L.Marker) map.removeLayer(layer); });
+function updateDashboard(features){
+    let totalOperacionais=0,
+        totalVeiculos=0,
+        totalAereos=0,
+        totalAquaticos=0,
+        totalIncendios=0,
+        totalSignificativas=0;
+
+    document.getElementById("tableBody").innerHTML="";
+    map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+
+    const agora = new Date();
 
     features.forEach(f => {
-        const p=f.properties;
-        const coords=f.geometry?.coordinates;
+        const p = f.properties || {};
+        const coords = f.geometry?.coordinates;
 
-        totalAereos += Number(p.MeiosAereos||0);
+        // Totais para cartões
         totalOperacionais += Number(p.Operacionais||0);
         totalVeiculos += Number(p.MeiosTerrestres||0);
+        totalAereos += Number(p.MeiosAereos||0);
         totalAquaticos += Number(p.MeiosAquaticos||0);
 
-        if(p.Especie){
-            const especieLower = p.Especie.toLowerCase();
-            if(especieLower.includes("incêndio")||especieLower.includes("detritos confinados")||
-               especieLower.includes("detritos não confinados")||especieLower.includes("equipamentos")){
-                totalIncendios++;
-            }
+        // Total Incêndios/Detritos/Equipamentos
+        if(typeof p.Especie === "string"){
+            const e = p.Especie.toLowerCase();
+            if(e.includes("incêndio") || e.includes("detritos") || e.includes("equipamentos")) totalIncendios++;
         }
 
-        if(p.Significativa===1||(p.Significativa && p.Significativa.toString().toLowerCase()==="sim")) totalSignificativas++;
+        // Tabela
+        document.getElementById("tableBody").innerHTML += `
+        <tr>
+        <td>${p.Data||"-"}</td>
+        <td>${p.Regiao||"-"}</td>
+        <td>${p.Concelho||"-"}</td>
+        <td>${p.Freguesia||"-"}</td>
+        <td>${p.Localidade||"-"}</td>
+        <td>${p.Tipo||"-"}</td>
+        <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
+        <td>${p.Operacionais||0}</td>
+        <td>${p.MeiosTerrestres||0}</td>
+        <td>${p.MeiosAereos||0}</td>
+        <td>${p.MeiosAquaticos||0}</td>
+        </tr>`;
 
-        table.innerHTML+=`
-            <tr>
-                <td>${p.DataInicioOcorrencia||"-"}</td>
-                <td>${p.Regiao||"-"}</td>
-                <td>${p.Concelho||"-"}</td>
-                <td>${p.Freguesia||"-"}</td>
-                <td>${p.Localidade||"-"}</td>
-                <td>${p.Tipo||"-"}</td>
-                <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
-                <td>${p.Operacionais||0}</td>
-                <td>${p.MeiosTerrestres||0}</td>
-                <td>${p.MeiosAereos||0}</td>
-                <td>${p.MeiosAquaticos||0}</td>
-            </tr>
-        `;
-
+        // Marker mapa
         if(coords){
-            const marker=L.marker([coords[1], coords[0]]).addTo(map);
-            marker.bindPopup(`
-                <b>Data / Hora:</b> ${p.DataInicioOcorrencia||'-'}<br>
-                <b>Região:</b> ${p.Regiao||'-'}<br>
-                <b>Concelho:</b> ${p.Concelho||'-'}<br>
-                <b>Freguesia:</b> ${p.Freguesia||'-'}<br>
-                <b>Localização:</b> ${p.Localidade||'-'}<br>
-                <b>Natureza:</b> ${p.Tipo||'-'}<br>
-                <b>Estado:</b> ${p.EstadoOcorrencia||'-'}<br>
-                <b>Operacionais:</b> ${p.Operacionais||0}<br>
-                <b>Meios Terrestres:</b> ${p.MeiosTerrestres||0}<br>
-                <b>Meios Aéreos:</b> ${p.MeiosAereos||0}<br>
-                <b>Meios Aquáticos:</b> ${p.MeiosAquaticos||0}
-            `);
+            const icon = L.AwesomeMarkers.icon({
+                icon:'fire',
+                prefix:'fa',
+                markerColor:getMarkerColor(p.EstadoOcorrencia)
+            });
+            L.marker([coords[1], coords[0]], {icon}).addTo(map);
+        }
+
+        // Cartão Significativas
+        const totalMeios = Number(p.Operacionais||0) + Number(p.MeiosTerrestres||0) + Number(p.MeiosAereos||0) + Number(p.MeiosAquaticos||0);
+        let duracaoHoras = 0;
+        if(p.Data){
+            const dataInicio = parseAPIData(p.Data);
+            duracaoHoras = (agora - dataInicio)/(1000*60*60); // horas
+        }
+
+        if(p.ImportanciaOcorrencia === "Elevada" &&
+           p.EstadoOcorrencia === "Em Curso" &&
+           duracaoHoras > 3 &&
+           totalMeios >= 15){
+            totalSignificativas++;
         }
     });
 
-    // Atualizar os cartões
-    document.getElementById('totalOcorrencias').innerHTML = `<i class="fas fa-bullseye"></i> ${features.length}`;
-    document.getElementById('totalAereos').innerHTML = `<i class="fas fa-helicopter"></i> ${totalAereos}`;
-    document.getElementById('totalOperacionais').innerHTML = `<i class="fas fa-hat-firefighter"></i> ${totalOperacionais}`;
-    document.getElementById('totalVeiculos').innerHTML = `<i class="fas fa-truck"></i> ${totalVeiculos}`;
-    document.getElementById('totalAquaticos').innerHTML = `<i class="fas fa-water"></i> ${totalAquaticos}`;
-    document.getElementById('totalIncendios').innerHTML = `<i class="fas fa-fire"></i> ${totalIncendios}`;
-    document.getElementById('totalSignificativas').innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${totalSignificativas}`;
+    // Atualiza todos os cartões
+    document.getElementById("totalOcorrencias").innerText = features.length;
+    document.getElementById("totalOperacionais").innerText = totalOperacionais;
+    document.getElementById("totalVeiculos").innerText = totalVeiculos;
+    document.getElementById("totalAereos").innerText = totalAereos;
+    document.getElementById("totalAquaticos").innerText = totalAquaticos;
+    document.getElementById("totalIncendios").innerText = totalIncendios;
+    document.getElementById("totalSignificativas").innerText = totalSignificativas;
 }
 
 // Buscar dados da API inicialmente e atualizar a cada 60s
