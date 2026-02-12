@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Institucional</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.js"></script>
+
 <style>
 body { font-family: Arial; margin:0; background:#f4f6f9; }
 header { background:#1e293b; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
@@ -12,12 +20,19 @@ header { background:#1e293b; color:white; padding:15px; display:flex; justify-co
 .card { background:white; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .card h3 { margin:0; font-size:14px; color:#666; }
 .card p { font-size:22px; margin:5px 0 0 0; font-weight:bold; }
+
+.main { display:flex; margin:20px; gap:15px; }
+#filters { width:250px; background:white; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+#map { flex:1; height:400px; border-radius:12px; }
+
 table { width:100%; border-collapse:collapse; background:white; margin:20px; }
 th, td { padding:8px; border-bottom:1px solid #ddd; font-size:12px; }
 th { background:#1e293b; color:white; }
 footer { text-align:center; padding:15px; background:#1e293b; color:white; margin-top:20px; }
+.badge { padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold; margin:2px 0; display:inline-block;}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -36,6 +51,24 @@ Dashboard Institucional
 <div class="card"><h3>Total Aquáticos</h3><p id="totalAquaticos">0</p></div>
 <div class="card"><h3>Total Incêndios</h3><p id="totalIncendios">0</p></div>
 <div class="card"><h3>Significativas</h3><p id="totalSignificativas">0</p></div>
+</div>
+
+<div class="main">
+<div id="filters">
+<h4>Filtros</h4>
+<label>Estado:
+<select id="filterEstado">
+<option value="">Todos</option>
+<option value="Em Curso">Em Curso</option>
+<option value="Despacho">Despacho</option>
+<option value="Despacho de 1º Alerta">Despacho de 1º Alerta</option>
+<option value="Em Resolução">Em Resolução</option>
+<option value="Em Conclusão">Em Conclusão</option>
+</select>
+</label>
+</div>
+
+<div id="map"></div>
 </div>
 
 <table>
@@ -74,6 +107,35 @@ function setOnlineStatus(online){
     document.getElementById("statusDot").style.background = online ? "limegreen" : "red";
 }
 
+// Mapa
+const map = L.map('map').setView([39.5, -8], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap'
+}).addTo(map);
+
+// Badge Estado
+function getEstadoBadge(estado){
+    if(!estado) return "-";
+    let cor="#999", texto="#fff";
+    if(estado==="Em Curso"){ cor="red"; }
+    if(estado==="Despacho"){ cor="orange"; texto="#000"; }
+    if(estado==="Despacho de 1º Alerta"){ cor="yellow"; texto="#000"; }
+    if(estado==="Em Resolução"){ cor="blue"; }
+    if(estado==="Em Conclusão"){ cor="green"; }
+    return `<span class="badge" style="background:${cor};color:${texto}">${estado}</span>`;
+}
+
+// Marker seguro
+function getMarkerColor(estado){
+    if(!estado) return "blue";
+    if(estado==="Em Curso") return "red";
+    if(estado==="Despacho") return "orange";
+    if(estado==="Despacho de 1º Alerta") return "yellow";
+    if(estado==="Em Resolução") return "blue";
+    if(estado==="Em Conclusão") return "green";
+    return "cadetblue";
+}
+
 // Fetch via proxy
 async function fetchGeoData(){
     try{
@@ -86,7 +148,15 @@ async function fetchGeoData(){
         }
 
         setOnlineStatus(true);
-        updateDashboard(data.features);
+
+        // Aplica filtro
+        const filterEstado = document.getElementById("filterEstado").value;
+        let features = data.features;
+        if(filterEstado){
+            features = features.filter(f => f.properties?.EstadoOcorrencia === filterEstado);
+        }
+
+        updateDashboard(features);
 
     }catch(error){
         console.error("Erro ao buscar dados:", error);
@@ -94,15 +164,18 @@ async function fetchGeoData(){
     }
 }
 
-// Atualiza cartões e tabela
+// Atualiza cartões, tabela e mapa
 function updateDashboard(features){
-    let totalOperacionais=0,totalVeiculos=0,totalAereos=0,totalAquaticos=0;
-    let totalIncendios=0,totalSignificativas=0;
+
+    let totalOperacionais=0,totalVeiculos=0,totalAereos=0;
+    let totalIncendios=0;
 
     document.getElementById("tableBody").innerHTML="";
+    map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer); });
 
     features.forEach(f=>{
         const p = f.properties || {};
+        const coords = f.geometry && Array.isArray(f.geometry.coordinates) ? f.geometry.coordinates : null;
 
         totalOperacionais += Number(p.Operacionais || 0);
         totalVeiculos += Number(p.MeiosTerrestres || 0);
@@ -122,22 +195,34 @@ function updateDashboard(features){
         <td>${p.Freguesia || "-"}</td>
         <td>${p.Localidade || "-"}</td>
         <td>${p.Tipo || "-"}</td>
-        <td>${p.EstadoOcorrencia || "-"}</td>
+        <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
         <td>${p.Operacionais || 0}</td>
         <td>${p.MeiosTerrestres || 0}</td>
         <td>${p.MeiosAereos || 0}</td>
         <td>0</td>
         </tr>`;
+
+        if(coords){
+            const icon = L.AwesomeMarkers.icon({
+                icon:'fire',
+                prefix:'fa',
+                markerColor:getMarkerColor(p.EstadoOcorrencia)
+            });
+            L.marker([coords[1], coords[0]], {icon}).addTo(map);
+        }
     });
 
     document.getElementById("totalOcorrencias").innerText = features.length;
     document.getElementById("totalOperacionais").innerText = totalOperacionais;
     document.getElementById("totalVeiculos").innerText = totalVeiculos;
     document.getElementById("totalAereos").innerText = totalAereos;
-    document.getElementById("totalAquaticos").innerText = totalAquaticos;
+    document.getElementById("totalAquaticos").innerText = 0;
     document.getElementById("totalIncendios").innerText = totalIncendios;
-    document.getElementById("totalSignificativas").innerText = totalSignificativas;
+    document.getElementById("totalSignificativas").innerText = 0;
 }
+
+// Atualiza quando filtro muda
+document.getElementById("filterEstado").addEventListener("change", fetchGeoData);
 
 // Inicializa fetch
 fetchGeoData();
