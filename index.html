@@ -150,7 +150,7 @@ function updateDashboard(features){
     map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer); });
 
     features.forEach(f=>{
-        const p=f.properties;
+        const p = f.properties || f.attributes || {};
         const coords=f.geometry?.coordinates;
 
         totalOperacionais+=Number(p.Operacionais||0);
