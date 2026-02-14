@@ -187,10 +187,14 @@ async function updateDashboard() {
 
   // Preencher dropdown com regiões
   const select = document.getElementById("regiaoSelect");
-  const regioesDisponiveis = [...new Set(props.map(p => p.Regiao || "N/A"))];
-  select.innerHTML = '<option value="Todas">Todas</option>';
-  regioesDisponiveis.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
 
+// Preenche dropdown apenas uma vez
+if(select.options.length <= 1) { // só se tiver 0 ou 1 opção
+  const regioesDisponiveis = [...new Set(props.map(p => p.Regiao || "N/A"))];
+  regioesDisponiveis.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
+}
+
+// Obtém a região selecionada
   const selectedRegiao = select.value;
   const dadosFiltrados = selectedRegiao === "Todas" ? props : props.filter(p => p.Regiao === selectedRegiao);
 
