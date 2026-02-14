@@ -15,9 +15,20 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       color: #1f3c88;
       font-size: 2em;
+    }
+
+    .top-link {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .top-link a {
+      color: #1f3c88;
+      text-decoration: none;
+      font-weight: bold;
     }
 
     .filter {
@@ -93,6 +104,12 @@
 
 <h1>📊 Ocorrências em Portugal - Dashboard</h1>
 
+<div class="top-link">
+  <a href="https://miguelt007.github.io/prociv2026/index.html" target="_blank">
+    Ir para Prociv 2026
+  </a>
+</div>
+
 <div class="filter">
   <label for="regiaoSelect">Filtrar por Região:</label>
   <select id="regiaoSelect">
@@ -167,7 +184,7 @@ const dataLabelPlugin = {
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(Math.round(value), bar.x, bar.y - 10); // offset para não ficar atrás do título
+        ctx.fillText(Math.round(value), bar.x, bar.y - 10);
       });
     });
   }
@@ -208,10 +225,10 @@ async function updateDashboard() {
     options: {
       responsive:true,
       maintainAspectRatio:false,
-      layout: { padding: { top: 30 } }, // espaço para o título
+      layout: { padding: { top: 30 } },
       plugins:{ tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}}, legend:{display:false} },
       scales:{ 
-        y:{ beginAtZero:true, ticks:{ stepSize:1 } } // eixo Y apenas números inteiros
+        y:{ beginAtZero:true, ticks:{ stepSize:1 } }
       }
     },
     plugins: [dataLabelPlugin]
