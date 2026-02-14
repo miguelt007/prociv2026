@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Ocorrências em Portugal - Estatísticas</title>
+  <title>Ocorrências em Portugal - Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -15,9 +15,21 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       color: #1f3c88;
       font-size: 2em;
+    }
+
+    .filter {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    select {
+      padding: 6px 12px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
     .grid {
@@ -42,7 +54,14 @@
       width: 100% !important;
     }
 
-    /* Tabela estilizada */
+    .chart-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+      color: #1f3c88;
+    }
+
     table {
       width: 90%;
       max-width: 1200px;
@@ -61,9 +80,8 @@
       background-color: #1f3c88;
       color: white;
     }
-    tr:nth-child(even) {
-      background-color: #f4f6f9;
-    }
+    tr:nth-child(even) { background-color: #f4f6f9; }
+
     @media (max-width: 600px) {
       h1 { font-size: 1.5em; }
       .chart-container { height: 300px; }
@@ -75,23 +93,30 @@
 
 <h1>📊 Ocorrências em Portugal - Dashboard</h1>
 
-<div class="grid">
+<div class="filter">
+  <label for="regiaoSelect">Filtrar por Região:</label>
+  <select id="regiaoSelect">
+    <option value="Todas">Todas</option>
+  </select>
+</div>
 
+<div class="grid">
   <div class="chart-container">
+    <div class="chart-title">Ocorrências por Região</div>
     <canvas id="chartRegiao"></canvas>
   </div>
 
   <div class="chart-container">
+    <div class="chart-title">Ocorrências por Tipo</div>
     <canvas id="chartTipo"></canvas>
   </div>
 
   <div class="chart-container" style="grid-column: span 2;">
+    <div class="chart-title">Comparativo: Operacionais e Meios por Região</div>
     <canvas id="chartComparativo"></canvas>
   </div>
-
 </div>
 
-<!-- Tabela de resumo por Tipo -->
 <table id="tableTipo">
   <thead>
     <tr>
@@ -101,9 +126,7 @@
       <th>Meios Aéreos</th>
     </tr>
   </thead>
-  <tbody>
-    <!-- Linhas geradas dinamicamente -->
-  </tbody>
+  <tbody></tbody>
 </table>
 
 <script>
@@ -111,7 +134,6 @@ async function fetchData() {
   const url = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson";
   const res = await fetch(url);
   const data = await res.json();
-  console.log(data.features[0].properties);
   return data.features.map(f => f.properties || f.attributes);
 }
 
@@ -132,7 +154,7 @@ function sumPorRegiao(arr, campo) {
   }, {});
 }
 
-// Plugin para mostrar valores sobre as barras
+// Plugin para labels sobre barras
 const dataLabelPlugin = {
   id: 'dataLabel',
   afterDatasetsDraw(chart) {
@@ -151,90 +173,103 @@ const dataLabelPlugin = {
   }
 };
 
-(async function() {
+let chartRegiao, chartTipo, chartComparativo;
+const colors = {
+  regiao: "#4e73df",
+  tipo: ["#6f42c1","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"],
+  operacionais: "#e74a3b",
+  terrestres: "#1cc88a",
+  aereos: "#f6c23e"
+};
+
+async function updateDashboard() {
   const props = await fetchData();
 
-  const colors = {
-    regiao: "#4e73df",
-    tipo: ["#6f42c1","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"],
-    operacionais: "#e74a3b",
-    terrestres: "#1cc88a",
-    aereos: "#f6c23e"
-  };
+  // Preencher dropdown com regiões
+  const select = document.getElementById("regiaoSelect");
+  const regioesDisponiveis = [...new Set(props.map(p => p.Regiao || "N/A"))];
+  select.innerHTML = '<option value="Todas">Todas</option>';
+  regioesDisponiveis.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
 
+  const selectedRegiao = select.value;
+  const dadosFiltrados = selectedRegiao === "Todas" ? props : props.filter(p => p.Regiao === selectedRegiao);
+
+  // =====================
   // Ocorrências por Região
-  const regiaoCounts = groupBy(props, "Regiao");
-  new Chart(document.getElementById("chartRegiao"), {
+  const regiaoCounts = groupBy(dadosFiltrados, "Regiao");
+  const labelsRegiao = Object.keys(regiaoCounts);
+  const dataRegiao = Object.values(regiaoCounts);
+
+  if(chartRegiao) chartRegiao.destroy();
+  chartRegiao = new Chart(document.getElementById("chartRegiao"), {
     type: "bar",
-    data: {
-      labels: Object.keys(regiaoCounts),
-      datasets: [{ label: "Ocorrências por Região", data: Object.values(regiaoCounts), backgroundColor: colors.regiao, borderRadius: 4 }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }, legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    },
+    data: { labels: labelsRegiao, datasets: [{ label:"Ocorrências", data: dataRegiao, backgroundColor: colors.regiao, borderRadius:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}},legend:{display:false}}, scales:{y:{beginAtZero:true}} },
     plugins: [dataLabelPlugin]
   });
 
+  // =====================
   // Ocorrências por Tipo
-  const tipoCounts = groupBy(props, "Tipo");
-  new Chart(document.getElementById("chartTipo"), {
+  const tipoCounts = groupBy(dadosFiltrados, "Tipo");
+  const labelsTipo = Object.keys(tipoCounts);
+  const dataTipo = Object.values(tipoCounts);
+
+  if(chartTipo) chartTipo.destroy();
+  chartTipo = new Chart(document.getElementById("chartTipo"), {
     type: "pie",
-    data: { labels: Object.keys(tipoCounts), datasets: [{ data: Object.values(tipoCounts), backgroundColor: colors.tipo }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } }, legend: { position: 'bottom' } } }
+    data: { labels: labelsTipo, datasets:[{data:dataTipo, backgroundColor: colors.tipo}] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}},legend:{position:'bottom'}} }
   });
 
-  // Comparativo por Região
-  const operacionais = sumPorRegiao(props, "Operacionais");
-  const terrestres = sumPorRegiao(props, "MeiosTerrestres");
-  const aereos = sumPorRegiao(props, "MeiosAereos");
+  // =====================
+  // Comparativo: Operacionais + Meios
+  const operacionais = sumPorRegiao(dadosFiltrados, "Operacionais");
+  const terrestres = sumPorRegiao(dadosFiltrados, "MeiosTerrestres");
+  const aereos = sumPorRegiao(dadosFiltrados, "MeiosAereos");
   const regioes = [...new Set([...Object.keys(operacionais), ...Object.keys(terrestres), ...Object.keys(aereos)])];
 
-  new Chart(document.getElementById("chartComparativo"), {
+  if(chartComparativo) chartComparativo.destroy();
+  chartComparativo = new Chart(document.getElementById("chartComparativo"), {
     type: "bar",
     data: {
       labels: regioes,
       datasets: [
-        { label: "Operacionais", data: regioes.map(r => operacionais[r] || 0), backgroundColor: colors.operacionais, borderRadius: 4 },
-        { label: "Meios Terrestres", data: regioes.map(r => terrestres[r] || 0), backgroundColor: colors.terrestres, borderRadius: 4 },
-        { label: "Meios Aéreos", data: regioes.map(r => aereos[r] || 0), backgroundColor: colors.aereos, borderRadius: 4 }
+        { label:"Operacionais", data: regioes.map(r => operacionais[r]||0), backgroundColor: colors.operacionais, borderRadius:4 },
+        { label:"Meios Terrestres", data: regioes.map(r => terrestres[r]||0), backgroundColor: colors.terrestres, borderRadius:4 },
+        { label:"Meios Aéreos", data: regioes.map(r => aereos[r]||0), backgroundColor: colors.aereos, borderRadius:4 }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }, legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}},legend:{position:'top'}}, scales:{y:{beginAtZero:true}} },
     plugins: [dataLabelPlugin]
   });
 
-  // ======================
-  // TABELA POR TIPO DE OCORRÊNCIA
-  // ======================
+  // =====================
+  // Tabela por Tipo
   const tableBody = document.querySelector("#tableTipo tbody");
-
-  // Agrupar totais por Tipo
+  tableBody.innerHTML = "";
   const tipoTotals = {};
-  props.forEach(item => {
+  dadosFiltrados.forEach(item => {
     const tipo = item.Tipo ?? "N/A";
-    if (!tipoTotals[tipo]) tipoTotals[tipo] = { Operacionais:0, MeiosTerrestres:0, MeiosAereos:0 };
-    tipoTotals[tipo].Operacionais += parseFloat((item.Operacionais ?? 0).toString().replace(",", ".")) || 0;
-    tipoTotals[tipo].MeiosTerrestres += parseFloat((item.MeiosTerrestres ?? 0).toString().replace(",", ".")) || 0;
-    tipoTotals[tipo].MeiosAereos += parseFloat((item.MeiosAereos ?? 0).toString().replace(",", ".")) || 0;
+    if (!tipoTotals[tipo]) tipoTotals[tipo] = {Operacionais:0, MeiosTerrestres:0, MeiosAereos:0};
+    tipoTotals[tipo].Operacionais += parseFloat((item.Operacionais??0).toString().replace(",","."))||0;
+    tipoTotals[tipo].MeiosTerrestres += parseFloat((item.MeiosTerrestres??0).toString().replace(",","."))||0;
+    tipoTotals[tipo].MeiosAereos += parseFloat((item.MeiosAereos??0).toString().replace(",","."))||0;
   });
 
-  // Criar linhas da tabela
-  Object.keys(tipoTotals).forEach(tipo => {
+  Object.keys(tipoTotals).forEach(tipo=>{
     const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${tipo}</td>
-      <td>${tipoTotals[tipo].Operacionais}</td>
-      <td>${tipoTotals[tipo].MeiosTerrestres}</td>
-      <td>${tipoTotals[tipo].MeiosAereos}</td>
-    `;
+    row.innerHTML = `<td>${tipo}</td><td>${tipoTotals[tipo].Operacionais}</td><td>${tipoTotals[tipo].MeiosTerrestres}</td><td>${tipoTotals[tipo].MeiosAereos}</td>`;
     tableBody.appendChild(row);
   });
+}
 
-})();
+// Atualizar ao mudar região
+document.getElementById("regiaoSelect").addEventListener("change", updateDashboard);
+
+// Atualização automática a cada 3 minutos
+updateDashboard();
+setInterval(updateDashboard, 180000); // 180000 ms = 3 min
+
 </script>
 
 </body>
