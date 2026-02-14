@@ -42,10 +42,32 @@
       width: 100% !important;
     }
 
-    /* Mobile tweaks */
+    /* Tabela estilizada */
+    table {
+      width: 90%;
+      max-width: 1200px;
+      margin: 40px auto;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+    }
+    th {
+      background-color: #1f3c88;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f4f6f9;
+    }
     @media (max-width: 600px) {
       h1 { font-size: 1.5em; }
       .chart-container { height: 300px; }
+      table { font-size: 0.85em; }
     }
   </style>
 </head>
@@ -69,14 +91,27 @@
 
 </div>
 
+<!-- Tabela de resumo por Tipo -->
+<table id="tableTipo">
+  <thead>
+    <tr>
+      <th>Tipo de Ocorrência</th>
+      <th>Operacionais</th>
+      <th>Meios Terrestres</th>
+      <th>Meios Aéreos</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Linhas geradas dinamicamente -->
+  </tbody>
+</table>
+
 <script>
 async function fetchData() {
   const url = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson";
   const res = await fetch(url);
   const data = await res.json();
-
-  console.log(data.features[0].properties); // verificar nomes exatos dos campos
-
+  console.log(data.features[0].properties);
   return data.features.map(f => f.properties || f.attributes);
 }
 
@@ -97,7 +132,7 @@ function sumPorRegiao(arr, campo) {
   }, {});
 }
 
-// Plugin para mostrar valores diretamente sobre as barras
+// Plugin para mostrar valores sobre as barras
 const dataLabelPlugin = {
   id: 'dataLabel',
   afterDatasetsDraw(chart) {
@@ -133,24 +168,12 @@ const dataLabelPlugin = {
     type: "bar",
     data: {
       labels: Object.keys(regiaoCounts),
-      datasets: [{
-        label: "Ocorrências por Região",
-        data: Object.values(regiaoCounts),
-        backgroundColor: colors.regiao,
-        borderRadius: 4
-      }]
+      datasets: [{ label: "Ocorrências por Região", data: Object.values(regiaoCounts), backgroundColor: colors.regiao, borderRadius: 4 }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.raw}`
-          }
-        },
-        legend: { display: false }
-      },
+      plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }, legend: { display: false } },
       scales: { y: { beginAtZero: true } }
     },
     plugins: [dataLabelPlugin]
@@ -160,33 +183,15 @@ const dataLabelPlugin = {
   const tipoCounts = groupBy(props, "Tipo");
   new Chart(document.getElementById("chartTipo"), {
     type: "pie",
-    data: {
-      labels: Object.keys(tipoCounts),
-      datasets: [{
-        data: Object.values(tipoCounts),
-        backgroundColor: colors.tipo
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } },
-        legend: { position: 'bottom' }
-      }
-    }
+    data: { labels: Object.keys(tipoCounts), datasets: [{ data: Object.values(tipoCounts), backgroundColor: colors.tipo }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } }, legend: { position: 'bottom' } } }
   });
 
-  // Comparativo: Operacionais + Meios por Região
+  // Comparativo por Região
   const operacionais = sumPorRegiao(props, "Operacionais");
   const terrestres = sumPorRegiao(props, "MeiosTerrestres");
   const aereos = sumPorRegiao(props, "MeiosAereos");
-
-  const regioes = [...new Set([
-    ...Object.keys(operacionais),
-    ...Object.keys(terrestres),
-    ...Object.keys(aereos)
-  ])];
+  const regioes = [...new Set([...Object.keys(operacionais), ...Object.keys(terrestres), ...Object.keys(aereos)])];
 
   new Chart(document.getElementById("chartComparativo"), {
     type: "bar",
@@ -198,16 +203,35 @@ const dataLabelPlugin = {
         { label: "Meios Aéreos", data: regioes.map(r => aereos[r] || 0), backgroundColor: colors.aereos, borderRadius: 4 }
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } },
-        legend: { position: 'top' }
-      },
-      scales: { y: { beginAtZero: true } }
-    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }, legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } },
     plugins: [dataLabelPlugin]
+  });
+
+  // ======================
+  // TABELA POR TIPO DE OCORRÊNCIA
+  // ======================
+  const tableBody = document.querySelector("#tableTipo tbody");
+
+  // Agrupar totais por Tipo
+  const tipoTotals = {};
+  props.forEach(item => {
+    const tipo = item.Tipo ?? "N/A";
+    if (!tipoTotals[tipo]) tipoTotals[tipo] = { Operacionais:0, MeiosTerrestres:0, MeiosAereos:0 };
+    tipoTotals[tipo].Operacionais += parseFloat((item.Operacionais ?? 0).toString().replace(",", ".")) || 0;
+    tipoTotals[tipo].MeiosTerrestres += parseFloat((item.MeiosTerrestres ?? 0).toString().replace(",", ".")) || 0;
+    tipoTotals[tipo].MeiosAereos += parseFloat((item.MeiosAereos ?? 0).toString().replace(",", ".")) || 0;
+  });
+
+  // Criar linhas da tabela
+  Object.keys(tipoTotals).forEach(tipo => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${tipo}</td>
+      <td>${tipoTotals[tipo].Operacionais}</td>
+      <td>${tipoTotals[tipo].MeiosTerrestres}</td>
+      <td>${tipoTotals[tipo].MeiosAereos}</td>
+    `;
+    tableBody.appendChild(row);
   });
 
 })();
