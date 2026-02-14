@@ -38,7 +38,15 @@
 </div>
 
 <div class="chart-container">
-  <canvas id="chartMeiosRegiao"></canvas>
+  <canvas id="chartOperacionais"></canvas>
+</div>
+
+<div class="chart-container">
+  <canvas id="chartTerrestres"></canvas>
+</div>
+
+<div class="chart-container">
+  <canvas id="chartAereos"></canvas>
 </div>
 
 <script>
@@ -57,16 +65,16 @@ function groupBy(arr, key) {
   }, {});
 }
 
-function sumMeiosPorRegiao(arr) {
+function sumPorRegiao(arr, campo) {
   return arr.reduce((acc, item) => {
     const regiao = item.Regiao || "N/A";
-    const meios = Number(item.Meios) || 0;  // <- ajusta aqui se o nome for diferente
-    acc[regiao] = (acc[regiao] || 0) + meios;
+    const valor = Number(item[campo]) || 0;
+    acc[regiao] = (acc[regiao] || 0) + valor;
     return acc;
   }, {});
 }
 
-function createChart(ctx, type, labels, data, label, colorSet) {
+function createChart(ctx, type, labels, data, label, color) {
   new Chart(ctx, {
     type,
     data: {
@@ -74,7 +82,7 @@ function createChart(ctx, type, labels, data, label, colorSet) {
       datasets: [{
         label,
         data,
-        backgroundColor: colorSet
+        backgroundColor: color
       }]
     },
     options: {
@@ -89,10 +97,12 @@ function createChart(ctx, type, labels, data, label, colorSet) {
 (async function() {
   const props = await fetchData();
 
-  const colors = [
-    "#4e73df","#1cc88a","#36b9cc","#f6c23e",
-    "#e74a3b","#858796","#fd7e14","#20c997"
-  ];
+  // 🎨 Cores individuais
+  const blue = "#4e73df";
+  const green = "#1cc88a";
+  const orange = "#f6c23e";
+  const red = "#e74a3b";
+  const purple = "#6f42c1";
 
   // 📍 Ocorrências por Região
   const regiaoCounts = groupBy(props, "Regiao");
@@ -102,7 +112,7 @@ function createChart(ctx, type, labels, data, label, colorSet) {
     Object.keys(regiaoCounts),
     Object.values(regiaoCounts),
     "Ocorrências por Região",
-    colors
+    blue
   );
 
   // 📍 Ocorrências por Tipo
@@ -113,18 +123,40 @@ function createChart(ctx, type, labels, data, label, colorSet) {
     Object.keys(tipoCounts),
     Object.values(tipoCounts),
     "Ocorrências por Tipo",
-    colors
+    purple
   );
 
-  // 🚒 Meios por Região
-  const meiosRegiao = sumMeiosPorRegiao(props);
+  // 🚒 Operacionais por Região
+  const operacionais = sumPorRegiao(props, "Operacionais");
   createChart(
-    document.getElementById("chartMeiosRegiao"),
+    document.getElementById("chartOperacionais"),
     "bar",
-    Object.keys(meiosRegiao),
-    Object.values(meiosRegiao),
-    "Total de Meios por Região",
-    colors
+    Object.keys(operacionais),
+    Object.values(operacionais),
+    "Total de Operacionais por Região",
+    red
+  );
+
+  // 🚓 Meios Terrestres por Região
+  const terrestres = sumPorRegiao(props, "MeiosTerrestres");
+  createChart(
+    document.getElementById("chartTerrestres"),
+    "bar",
+    Object.keys(terrestres),
+    Object.values(terrestres),
+    "Total de Meios Terrestres por Região",
+    green
+  );
+
+  // 🚁 Meios Aéreos por Região
+  const aereos = sumPorRegiao(props, "MeiosAereos");
+  createChart(
+    document.getElementById("chartAereos"),
+    "bar",
+    Object.keys(aereos),
+    Object.values(aereos),
+    "Total de Meios Aéreos por Região",
+    orange
   );
 
 })();
