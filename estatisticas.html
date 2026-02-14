@@ -8,37 +8,38 @@
     body {
       font-family: Arial, sans-serif;
       margin: 40px;
-      background: #f8f9fa;
+      background: #f4f6f9;
     }
     h1 {
       text-align: center;
-      color: #2a3f54;
+      color: #1f3c88;
+      margin-bottom: 50px;
     }
     .chart-container {
       width: 90%;
       margin: 40px auto;
       background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
     }
   </style>
 </head>
 <body>
 
-  <h1>📊 Ocorrências em Portugal - Estatísticas</h1>
+<h1>📊 Ocorrências em Portugal - Estatísticas</h1>
 
-  <div class="chart-container">
-    <canvas id="chartRegiao"></canvas>
-  </div>
+<div class="chart-container">
+  <canvas id="chartRegiao"></canvas>
+</div>
 
-  <div class="chart-container">
-    <canvas id="chartTipo"></canvas>
-  </div>
+<div class="chart-container">
+  <canvas id="chartTipo"></canvas>
+</div>
 
-  <div class="chart-container">
-    <canvas id="chartAno"></canvas>
-  </div>
+<div class="chart-container">
+  <canvas id="chartMeiosRegiao"></canvas>
+</div>
 
 <script>
 async function fetchData() {
@@ -56,7 +57,16 @@ function groupBy(arr, key) {
   }, {});
 }
 
-function createChart(ctx, type, labels, data, label) {
+function sumMeiosPorRegiao(arr) {
+  return arr.reduce((acc, item) => {
+    const regiao = item.Regiao || "N/A";
+    const meios = Number(item.Meios) || 0;  // <- ajusta aqui se o nome for diferente
+    acc[regiao] = (acc[regiao] || 0) + meios;
+    return acc;
+  }, {});
+}
+
+function createChart(ctx, type, labels, data, label, colorSet) {
   new Chart(ctx, {
     type,
     data: {
@@ -64,47 +74,57 @@ function createChart(ctx, type, labels, data, label) {
       datasets: [{
         label,
         data,
-        backgroundColor: [
-          "#4e73df","#1cc88a","#36b9cc","#f6c23e",
-          "#e74a3b","#858796","#fd7e14","#20c997"
-        ]
+        backgroundColor: colorSet
       }]
     },
-    options: { responsive: true }
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      }
+    }
   });
 }
 
 (async function() {
   const props = await fetchData();
 
-  // 📍 Agrupar por Região
+  const colors = [
+    "#4e73df","#1cc88a","#36b9cc","#f6c23e",
+    "#e74a3b","#858796","#fd7e14","#20c997"
+  ];
+
+  // 📍 Ocorrências por Região
   const regiaoCounts = groupBy(props, "Regiao");
   createChart(
     document.getElementById("chartRegiao"),
     "bar",
     Object.keys(regiaoCounts),
     Object.values(regiaoCounts),
-    "Ocorrências por Região"
+    "Ocorrências por Região",
+    colors
   );
 
-  // 📍 Agrupar por Tipo
+  // 📍 Ocorrências por Tipo
   const tipoCounts = groupBy(props, "Tipo");
   createChart(
     document.getElementById("chartTipo"),
     "pie",
     Object.keys(tipoCounts),
     Object.values(tipoCounts),
-    "Ocorrências por Tipo"
+    "Ocorrências por Tipo",
+    colors
   );
 
-  // 📍 Agrupar por Ano
-  const anoCounts = groupBy(props, "Ano");
+  // 🚒 Meios por Região
+  const meiosRegiao = sumMeiosPorRegiao(props);
   createChart(
-    document.getElementById("chartAno"),
-    "line",
-    Object.keys(anoCounts),
-    Object.values(anoCounts),
-    "Ocorrências por Ano"
+    document.getElementById("chartMeiosRegiao"),
+    "bar",
+    Object.keys(meiosRegiao),
+    Object.values(meiosRegiao),
+    "Total de Meios por Região",
+    colors
   );
 
 })();
