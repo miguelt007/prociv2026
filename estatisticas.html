@@ -7,33 +7,33 @@
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: "Segoe UI", Arial, sans-serif;
       margin: 20px;
-      background: #f4f6f9;
+      background: #eef2f7;
+      color: #333;
     }
 
     h1 {
       text-align: center;
-      color: #1f3c88;
       margin-bottom: 30px;
-      font-size: 1.8em;
+      color: #1f3c88;
+      font-size: 2em;
     }
 
-    /* Layout tipo dashboard responsivo */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      max-width: 1200px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
+      max-width: 1300px;
       margin: auto;
     }
 
     .chart-container {
       background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
-      height: 350px;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      height: 380px;
       position: relative;
     }
 
@@ -44,14 +44,14 @@
 
     /* Mobile tweaks */
     @media (max-width: 600px) {
-      h1 { font-size: 1.4em; }
+      h1 { font-size: 1.5em; }
       .chart-container { height: 300px; }
     }
   </style>
 </head>
 <body>
 
-<h1>📊 Ocorrências em Portugal - Estatísticas</h1>
+<h1>📊 Ocorrências em Portugal - Dashboard</h1>
 
 <div class="grid">
 
@@ -97,6 +97,25 @@ function sumPorRegiao(arr, campo) {
   }, {});
 }
 
+// Plugin para mostrar valores diretamente sobre as barras
+const dataLabelPlugin = {
+  id: 'dataLabel',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((dataset, i) => {
+      const meta = chart.getDatasetMeta(i);
+      meta.data.forEach((bar, index) => {
+        const value = dataset.data[index];
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(value, bar.x, bar.y - 5);
+      });
+    });
+  }
+};
+
 (async function() {
   const props = await fetchData();
 
@@ -108,7 +127,7 @@ function sumPorRegiao(arr, campo) {
     aereos: "#f6c23e"
   };
 
-  // 📍 Ocorrências por Região
+  // Ocorrências por Região
   const regiaoCounts = groupBy(props, "Regiao");
   new Chart(document.getElementById("chartRegiao"), {
     type: "bar",
@@ -117,7 +136,8 @@ function sumPorRegiao(arr, campo) {
       datasets: [{
         label: "Ocorrências por Região",
         data: Object.values(regiaoCounts),
-        backgroundColor: colors.regiao
+        backgroundColor: colors.regiao,
+        borderRadius: 4
       }]
     },
     options: {
@@ -125,21 +145,18 @@ function sumPorRegiao(arr, campo) {
       maintainAspectRatio: false,
       plugins: {
         tooltip: {
-          enabled: true,
           callbacks: {
-            label: function(context) {
-              return `${context.dataset.label}: ${context.raw}`;
-            }
+            label: ctx => `${ctx.dataset.label}: ${ctx.raw}`
           }
-        }
+        },
+        legend: { display: false }
       },
-      scales: {
-        y: { beginAtZero: true }
-      }
-    }
+      scales: { y: { beginAtZero: true } }
+    },
+    plugins: [dataLabelPlugin]
   });
 
-  // 📍 Ocorrências por Tipo
+  // Ocorrências por Tipo
   const tipoCounts = groupBy(props, "Tipo");
   new Chart(document.getElementById("chartTipo"), {
     type: "pie",
@@ -154,19 +171,13 @@ function sumPorRegiao(arr, campo) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: function(context) {
-              return `${context.label}: ${context.raw}`;
-            }
-          }
-        }
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } },
+        legend: { position: 'bottom' }
       }
     }
   });
 
-  // 📊 Comparativo: Operacionais + Meios por Região
+  // Comparativo: Operacionais + Meios por Região
   const operacionais = sumPorRegiao(props, "Operacionais");
   const terrestres = sumPorRegiao(props, "MeiosTerrestres");
   const aereos = sumPorRegiao(props, "MeiosAereos");
@@ -182,41 +193,21 @@ function sumPorRegiao(arr, campo) {
     data: {
       labels: regioes,
       datasets: [
-        {
-          label: "Operacionais",
-          data: regioes.map(r => operacionais[r] || 0),
-          backgroundColor: colors.operacionais
-        },
-        {
-          label: "Meios Terrestres",
-          data: regioes.map(r => terrestres[r] || 0),
-          backgroundColor: colors.terrestres
-        },
-        {
-          label: "Meios Aéreos",
-          data: regioes.map(r => aereos[r] || 0),
-          backgroundColor: colors.aereos
-        }
+        { label: "Operacionais", data: regioes.map(r => operacionais[r] || 0), backgroundColor: colors.operacionais, borderRadius: 4 },
+        { label: "Meios Terrestres", data: regioes.map(r => terrestres[r] || 0), backgroundColor: colors.terrestres, borderRadius: 4 },
+        { label: "Meios Aéreos", data: regioes.map(r => aereos[r] || 0), backgroundColor: colors.aereos, borderRadius: 4 }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: function(context) {
-              return `${context.dataset.label}: ${context.raw}`;
-            }
-          }
-        },
-        legend: { position: "top" }
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } },
+        legend: { position: 'top' }
       },
-      scales: {
-        y: { beginAtZero: true }
-      }
-    }
+      scales: { y: { beginAtZero: true } }
+    },
+    plugins: [dataLabelPlugin]
   });
 
 })();
