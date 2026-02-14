@@ -167,7 +167,7 @@ const dataLabelPlugin = {
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(value, bar.x, bar.y - 5);
+        ctx.fillText(Math.round(value), bar.x, bar.y - 5);
       });
     });
   }
@@ -185,16 +185,13 @@ const colors = {
 async function updateDashboard() {
   const props = await fetchData();
 
-  // Preencher dropdown com regiões
+  // Preenche dropdown apenas uma vez
   const select = document.getElementById("regiaoSelect");
+  if(select.options.length <= 1) {
+    const regioesDisponiveis = [...new Set(props.map(p => p.Regiao || "N/A"))];
+    regioesDisponiveis.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
+  }
 
-// Preenche dropdown apenas uma vez
-if(select.options.length <= 1) { // só se tiver 0 ou 1 opção
-  const regioesDisponiveis = [...new Set(props.map(p => p.Regiao || "N/A"))];
-  regioesDisponiveis.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
-}
-
-// Obtém a região selecionada
   const selectedRegiao = select.value;
   const dadosFiltrados = selectedRegiao === "Todas" ? props : props.filter(p => p.Regiao === selectedRegiao);
 
@@ -208,7 +205,14 @@ if(select.options.length <= 1) { // só se tiver 0 ou 1 opção
   chartRegiao = new Chart(document.getElementById("chartRegiao"), {
     type: "bar",
     data: { labels: labelsRegiao, datasets: [{ label:"Ocorrências", data: dataRegiao, backgroundColor: colors.regiao, borderRadius:4 }] },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}},legend:{display:false}}, scales:{y:{beginAtZero:true}} },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}}, legend:{display:false} },
+      scales:{ 
+        y:{ beginAtZero:true, ticks:{ stepSize:1 } } // eixo Y apenas números inteiros
+      }
+    },
     plugins: [dataLabelPlugin]
   });
 
@@ -272,8 +276,7 @@ document.getElementById("regiaoSelect").addEventListener("change", updateDashboa
 
 // Atualização automática a cada 3 minutos
 updateDashboard();
-setInterval(updateDashboard, 180000); // 180000 ms = 3 min
-
+setInterval(updateDashboard, 180000); // 3 min
 </script>
 
 </body>
