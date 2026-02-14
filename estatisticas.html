@@ -8,35 +8,44 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 30px;
+      margin: 20px;
       background: #f4f6f9;
     }
 
     h1 {
       text-align: center;
       color: #1f3c88;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
+      font-size: 1.8em;
     }
 
+    /* Layout tipo dashboard responsivo */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 25px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
       max-width: 1200px;
       margin: auto;
     }
 
     .chart-container {
       background: white;
-      padding: 20px;
+      padding: 15px;
       border-radius: 12px;
       box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
       height: 350px;
+      position: relative;
     }
 
     canvas {
       height: 100% !important;
       width: 100% !important;
+    }
+
+    /* Mobile tweaks */
+    @media (max-width: 600px) {
+      h1 { font-size: 1.4em; }
+      .chart-container { height: 300px; }
     }
   </style>
 </head>
@@ -66,7 +75,7 @@ async function fetchData() {
   const res = await fetch(url);
   const data = await res.json();
 
-  console.log(data.features[0].properties); // para verificar nomes exatos dos campos
+  console.log(data.features[0].properties); // verificar nomes exatos dos campos
 
   return data.features.map(f => f.properties || f.attributes);
 }
@@ -91,9 +100,16 @@ function sumPorRegiao(arr, campo) {
 (async function() {
   const props = await fetchData();
 
+  const colors = {
+    regiao: "#4e73df",
+    tipo: ["#6f42c1","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"],
+    operacionais: "#e74a3b",
+    terrestres: "#1cc88a",
+    aereos: "#f6c23e"
+  };
+
   // 📍 Ocorrências por Região
   const regiaoCounts = groupBy(props, "Regiao");
-
   new Chart(document.getElementById("chartRegiao"), {
     type: "bar",
     data: {
@@ -101,27 +117,53 @@ function sumPorRegiao(arr, campo) {
       datasets: [{
         label: "Ocorrências por Região",
         data: Object.values(regiaoCounts),
-        backgroundColor: "#4e73df"
+        backgroundColor: colors.regiao
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
   });
 
   // 📍 Ocorrências por Tipo
   const tipoCounts = groupBy(props, "Tipo");
-
   new Chart(document.getElementById("chartTipo"), {
     type: "pie",
     data: {
       labels: Object.keys(tipoCounts),
       datasets: [{
         data: Object.values(tipoCounts),
-        backgroundColor: [
-          "#6f42c1","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"
-        ]
+        backgroundColor: colors.tipo
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: ${context.raw}`;
+            }
+          }
+        }
+      }
+    }
   });
 
   // 📊 Comparativo: Operacionais + Meios por Região
@@ -129,7 +171,6 @@ function sumPorRegiao(arr, campo) {
   const terrestres = sumPorRegiao(props, "MeiosTerrestres");
   const aereos = sumPorRegiao(props, "MeiosAereos");
 
-  // Junta todas as regiões possíveis
   const regioes = [...new Set([
     ...Object.keys(operacionais),
     ...Object.keys(terrestres),
@@ -144,24 +185,34 @@ function sumPorRegiao(arr, campo) {
         {
           label: "Operacionais",
           data: regioes.map(r => operacionais[r] || 0),
-          backgroundColor: "#e74a3b"
+          backgroundColor: colors.operacionais
         },
         {
           label: "Meios Terrestres",
           data: regioes.map(r => terrestres[r] || 0),
-          backgroundColor: "#1cc88a"
+          backgroundColor: colors.terrestres
         },
         {
           label: "Meios Aéreos",
           data: regioes.map(r => aereos[r] || 0),
-          backgroundColor: "#f6c23e"
+          backgroundColor: colors.aereos
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: "top" } },
+      plugins: {
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
+          }
+        },
+        legend: { position: "top" }
+      },
       scales: {
         y: { beginAtZero: true }
       }
