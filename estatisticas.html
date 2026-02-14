@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Ocorrências em Portugal - Estatísticas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+      color: #2a3f54;
+    }
+    .chart-container {
+      width: 90%;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Ocorrências em Portugal - Estatísticas</h1>
+
+  <div class="chart-container">
+    <canvas id="chartRegiao"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="chartTipo"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="chartAno"></canvas>
+  </div>
+
+<script>
+async function fetchData() {
+  const url = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson";
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.features.map(f => f.properties);
+}
+
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const value = item[key] || "N/A";
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function createChart(ctx, type, labels, data, label) {
+  new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        backgroundColor: [
+          "#4e73df","#1cc88a","#36b9cc","#f6c23e",
+          "#e74a3b","#858796","#fd7e14","#20c997"
+        ]
+      }]
+    },
+    options: { responsive: true }
+  });
+}
+
+(async function() {
+  const props = await fetchData();
+
+  // 📍 Agrupar por Região
+  const regiaoCounts = groupBy(props, "Regiao");
+  createChart(
+    document.getElementById("chartRegiao"),
+    "bar",
+    Object.keys(regiaoCounts),
+    Object.values(regiaoCounts),
+    "Ocorrências por Região"
+  );
+
+  // 📍 Agrupar por Tipo
+  const tipoCounts = groupBy(props, "Tipo");
+  createChart(
+    document.getElementById("chartTipo"),
+    "pie",
+    Object.keys(tipoCounts),
+    Object.values(tipoCounts),
+    "Ocorrências por Tipo"
+  );
+
+  // 📍 Agrupar por Ano
+  const anoCounts = groupBy(props, "Ano");
+  createChart(
+    document.getElementById("chartAno"),
+    "line",
+    Object.keys(anoCounts),
+    Object.values(anoCounts),
+    "Ocorrências por Ano"
+  );
+
+})();
+</script>
+
+</body>
+</html>
