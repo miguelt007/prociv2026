@@ -65,6 +65,7 @@ async function fetchData() {
   const url = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson";
   const res = await fetch(url);
   const data = await res.json();
+  console.log(data.features[0]); //
   return data.features.map(f => f.properties);
 }
 
@@ -177,8 +178,6 @@ function sumPorRegiao(arr, campo) {
   });
 
 })();
-  console.log(data.features[0]);
-
 </script>
 
 </body>
