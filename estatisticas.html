@@ -167,7 +167,7 @@ const dataLabelPlugin = {
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(Math.round(value), bar.x, bar.y - 5);
+        ctx.fillText(Math.round(value), bar.x, bar.y - 10); // offset para não ficar atrás do título
       });
     });
   }
@@ -208,6 +208,7 @@ async function updateDashboard() {
     options: {
       responsive:true,
       maintainAspectRatio:false,
+      layout: { padding: { top: 30 } }, // espaço para o título
       plugins:{ tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}}, legend:{display:false} },
       scales:{ 
         y:{ beginAtZero:true, ticks:{ stepSize:1 } } // eixo Y apenas números inteiros
@@ -258,7 +259,7 @@ async function updateDashboard() {
   const tipoTotals = {};
   dadosFiltrados.forEach(item => {
     const tipo = item.Tipo ?? "N/A";
-    if (!tipoTotals[tipo]) tipoTotals[tipo] = {Operacionais:0, MeiosTerrestres:0, MeiosAereos:0};
+    if (!tipoTotals[tipo]) tipoTotals[tipo] = {Operacionais:0, MeiosTerrestres:0, MeiosAéreos:0};
     tipoTotals[tipo].Operacionais += parseFloat((item.Operacionais??0).toString().replace(",","."))||0;
     tipoTotals[tipo].MeiosTerrestres += parseFloat((item.MeiosTerrestres??0).toString().replace(",","."))||0;
     tipoTotals[tipo].MeiosAereos += parseFloat((item.MeiosAereos??0).toString().replace(",","."))||0;
@@ -266,7 +267,7 @@ async function updateDashboard() {
 
   Object.keys(tipoTotals).forEach(tipo=>{
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${tipo}</td><td>${tipoTotals[tipo].Operacionais}</td><td>${tipoTotals[tipo].MeiosTerrestres}</td><td>${tipoTotals[tipo].MeiosAereos}</td>`;
+    row.innerHTML = `<td>${tipo}</td><td>${tipoTotals[tipo].Operacionais}</td><td>${tipoTotals[tipo].MeiosTerrestres}</td><td>${tipoTotals[tipo].MeiosAéreos}</td>`;
     tableBody.appendChild(row);
   });
 }
