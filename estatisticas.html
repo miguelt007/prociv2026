@@ -79,8 +79,21 @@ function groupBy(arr, key) {
 function sumPorRegiao(arr, campo) {
   return arr.reduce((acc, item) => {
     const regiao = item.Regiao || "N/A";
-    const valor = Number(item[campo]) || 0;
+
+    let valor = item[campo];
+
+    // Se vier null ou undefined
+    if (!valor) valor = 0;
+
+    // Se vier como string com vírgula
+    if (typeof valor === "string") {
+      valor = valor.replace(",", ".");
+    }
+
+    valor = Number(valor) || 0;
+
     acc[regiao] = (acc[regiao] || 0) + valor;
+
     return acc;
   }, {});
 }
