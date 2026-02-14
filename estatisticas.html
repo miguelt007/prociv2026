@@ -4,24 +4,39 @@
   <meta charset="UTF-8">
   <title>Ocorrências em Portugal - Estatísticas</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 40px;
+      margin: 30px;
       background: #f4f6f9;
     }
+
     h1 {
       text-align: center;
       color: #1f3c88;
-      margin-bottom: 50px;
+      margin-bottom: 40px;
     }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 25px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
     .chart-container {
-      width: 90%;
-      margin: 40px auto;
       background: white;
-      padding: 25px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+      height: 350px;
+    }
+
+    canvas {
+      height: 100% !important;
+      width: 100% !important;
     }
   </style>
 </head>
@@ -29,24 +44,20 @@
 
 <h1>📊 Ocorrências em Portugal - Estatísticas</h1>
 
-<div class="chart-container">
-  <canvas id="chartRegiao"></canvas>
-</div>
+<div class="grid">
 
-<div class="chart-container">
-  <canvas id="chartTipo"></canvas>
-</div>
+  <div class="chart-container">
+    <canvas id="chartRegiao"></canvas>
+  </div>
 
-<div class="chart-container">
-  <canvas id="chartOperacionais"></canvas>
-</div>
+  <div class="chart-container">
+    <canvas id="chartTipo"></canvas>
+  </div>
 
-<div class="chart-container">
-  <canvas id="chartTerrestres"></canvas>
-</div>
+  <div class="chart-container" style="grid-column: span 2;">
+    <canvas id="chartComparativo"></canvas>
+  </div>
 
-<div class="chart-container">
-  <canvas id="chartAereos"></canvas>
 </div>
 
 <script>
@@ -74,90 +85,83 @@ function sumPorRegiao(arr, campo) {
   }, {});
 }
 
-function createChart(ctx, type, labels, data, label, color) {
-  new Chart(ctx, {
-    type,
+(async function() {
+  const props = await fetchData();
+
+  // 📍 Ocorrências por Região
+  const regiaoCounts = groupBy(props, "Regiao");
+
+  new Chart(document.getElementById("chartRegiao"), {
+    type: "bar",
     data: {
-      labels,
+      labels: Object.keys(regiaoCounts),
       datasets: [{
-        label,
-        data,
-        backgroundColor: color
+        label: "Ocorrências por Região",
+        data: Object.values(regiaoCounts),
+        backgroundColor: "#4e73df"
       }]
+    },
+    options: { responsive: true }
+  });
+
+  // 📍 Ocorrências por Tipo
+  const tipoCounts = groupBy(props, "Tipo");
+
+  new Chart(document.getElementById("chartTipo"), {
+    type: "pie",
+    data: {
+      labels: Object.keys(tipoCounts),
+      datasets: [{
+        data: Object.values(tipoCounts),
+        backgroundColor: [
+          "#6f42c1","#1cc88a","#36b9cc",
+          "#f6c23e","#e74a3b","#858796"
+        ]
+      }]
+    },
+    options: { responsive: true }
+  });
+
+  // 📊 Comparativo por Região
+  const operacionais = sumPorRegiao(props, "Operacionais");
+  const terrestres = sumPorRegiao(props, "MeiosTerrestres");
+  const aereos = sumPorRegiao(props, "MeiosAereos");
+
+  const regioes = Object.keys(operacionais);
+
+  new Chart(document.getElementById("chartComparativo"), {
+    type: "bar",
+    data: {
+      labels: regioes,
+      datasets: [
+        {
+          label: "Operacionais",
+          data: regioes.map(r => operacionais[r] || 0),
+          backgroundColor: "#e74a3b"
+        },
+        {
+          label: "Meios Terrestres",
+          data: regioes.map(r => terrestres[r] || 0),
+          backgroundColor: "#1cc88a"
+        },
+        {
+          label: "Meios Aéreos",
+          data: regioes.map(r => aereos[r] || 0),
+          backgroundColor: "#f6c23e"
+        }
+      ]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { display: true }
+        legend: { position: "top" }
+      },
+      scales: {
+        x: { stacked: false },
+        y: { beginAtZero: true }
       }
     }
   });
-}
-
-(async function() {
-  const props = await fetchData();
-
-  // 🎨 Cores individuais
-  const blue = "#4e73df";
-  const green = "#1cc88a";
-  const orange = "#f6c23e";
-  const red = "#e74a3b";
-  const purple = "#6f42c1";
-
-  // 📍 Ocorrências por Região
-  const regiaoCounts = groupBy(props, "Regiao");
-  createChart(
-    document.getElementById("chartRegiao"),
-    "bar",
-    Object.keys(regiaoCounts),
-    Object.values(regiaoCounts),
-    "Ocorrências por Região",
-    blue
-  );
-
-  // 📍 Ocorrências por Tipo
-  const tipoCounts = groupBy(props, "Tipo");
-  createChart(
-    document.getElementById("chartTipo"),
-    "pie",
-    Object.keys(tipoCounts),
-    Object.values(tipoCounts),
-    "Ocorrências por Tipo",
-    purple
-  );
-
-  // 🚒 Operacionais por Região
-  const operacionais = sumPorRegiao(props, "Operacionais");
-  createChart(
-    document.getElementById("chartOperacionais"),
-    "bar",
-    Object.keys(operacionais),
-    Object.values(operacionais),
-    "Total de Operacionais por Região",
-    red
-  );
-
-  // 🚓 Meios Terrestres por Região
-  const terrestres = sumPorRegiao(props, "MeiosTerrestres");
-  createChart(
-    document.getElementById("chartTerrestres"),
-    "bar",
-    Object.keys(terrestres),
-    Object.values(terrestres),
-    "Total de Meios Terrestres por Região",
-    green
-  );
-
-  // 🚁 Meios Aéreos por Região
-  const aereos = sumPorRegiao(props, "MeiosAereos");
-  createChart(
-    document.getElementById("chartAereos"),
-    "bar",
-    Object.keys(aereos),
-    Object.values(aereos),
-    "Total de Meios Aéreos por Região",
-    orange
-  );
 
 })();
 </script>
