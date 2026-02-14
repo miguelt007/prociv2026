@@ -65,8 +65,10 @@ async function fetchData() {
   const url = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson";
   const res = await fetch(url);
   const data = await res.json();
-  console.log(data.features[0]); //
-  return data.features.map(f => f.properties);
+
+  console.log(data.features[0].properties); // para verificar nomes exatos dos campos
+
+  return data.features.map(f => f.properties || f.attributes);
 }
 
 function groupBy(arr, key) {
@@ -79,22 +81,9 @@ function groupBy(arr, key) {
 
 function sumPorRegiao(arr, campo) {
   return arr.reduce((acc, item) => {
-    const regiao = item.Regiao || "N/A";
-
-    let valor = item[campo];
-
-    // Se vier null ou undefined
-    if (!valor) valor = 0;
-
-    // Se vier como string com vírgula
-    if (typeof valor === "string") {
-      valor = valor.replace(",", ".");
-    }
-
-    valor = Number(valor) || 0;
-
+    const regiao = item.Regiao ?? "N/A";
+    const valor = parseFloat((item[campo] ?? 0).toString().replace(",", ".")) || 0;
     acc[regiao] = (acc[regiao] || 0) + valor;
-
     return acc;
   }, {});
 }
@@ -115,7 +104,7 @@ function sumPorRegiao(arr, campo) {
         backgroundColor: "#4e73df"
       }]
     },
-    options: { responsive: true }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 
   // 📍 Ocorrências por Tipo
@@ -128,20 +117,24 @@ function sumPorRegiao(arr, campo) {
       datasets: [{
         data: Object.values(tipoCounts),
         backgroundColor: [
-          "#6f42c1","#1cc88a","#36b9cc",
-          "#f6c23e","#e74a3b","#858796"
+          "#6f42c1","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"
         ]
       }]
     },
-    options: { responsive: true }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 
-  // 📊 Comparativo por Região
+  // 📊 Comparativo: Operacionais + Meios por Região
   const operacionais = sumPorRegiao(props, "Operacionais");
   const terrestres = sumPorRegiao(props, "MeiosTerrestres");
   const aereos = sumPorRegiao(props, "MeiosAereos");
 
-  const regioes = Object.keys(operacionais);
+  // Junta todas as regiões possíveis
+  const regioes = [...new Set([
+    ...Object.keys(operacionais),
+    ...Object.keys(terrestres),
+    ...Object.keys(aereos)
+  ])];
 
   new Chart(document.getElementById("chartComparativo"), {
     type: "bar",
@@ -167,11 +160,9 @@ function sumPorRegiao(arr, campo) {
     },
     options: {
       responsive: true,
-      plugins: {
-        legend: { position: "top" }
-      },
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "top" } },
       scales: {
-        x: { stacked: false },
         y: { beginAtZero: true }
       }
     }
