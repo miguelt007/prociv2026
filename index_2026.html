@@ -100,7 +100,6 @@ td { vertical-align: middle; }
 <div class="card gray"><i class="fa-solid fa-truck slide"></i><strong>Terrestres</strong><h2 id="terrestresCount">0</h2></div>
 <div class="card gray"><i class="fa-solid fa-helicopter rotate-slow"></i><strong>Aéreos</strong><h2 id="aereosCount">0</h2></div>
 <div class="card yellow"><i class="fa-solid fa-bell shake"></i><strong>1º Alerta</strong><h2 id="alertCount">0</h2></div>
-<div class="card gray"><i class="fa-solid fa-eye"></i><strong>Vigilância</strong><h2 id="vigilanciaCount">0</h2></div>
 <div class="card red"><i class="fa-solid fa-fire pulse"></i><strong>Em Curso</strong><h2 id="cursoCount">0</h2></div>
 <div class="card blue"><i class="fa-solid fa-spinner spin"></i><strong>Resolução</strong><h2 id="resolucaoCount">0</h2></div>
 <div class="card green"><i class="fa-solid fa-circle-check pop"></i><strong>Conclusão</strong><h2 id="conclusaoCount">0</h2></div>
@@ -137,7 +136,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 let markers=L.markerClusterGroup();map.addLayer(markers);
 
 let allData=[];
-let previousValues={total:0,alerta:0,vigilancia:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
+let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
 function getDistrito(nome){
   const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
@@ -218,7 +217,6 @@ function renderTable(data){
 function renderDashboard(data){
   const total=data.length;
   const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-  const vigilancia=data.filter(f=>f.properties.EstadoOcorrencia==="Vigilância").length;
   const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
   const resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
   const conclusao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
@@ -228,7 +226,6 @@ function renderDashboard(data){
 
   updateCard("totalCount",total,previousValues.total);
   updateCard("alertCount",alerta,previousValues.alerta);
-  updateCard("vigilanciaCount",vigilancia,previousValues.vigilancia);
   updateCard("cursoCount",curso,previousValues.curso);
   updateCard("resolucaoCount",resolucao,previousValues.resolucao);
   updateCard("conclusaoCount",conclusao,previousValues.conclusao);
@@ -236,7 +233,7 @@ function renderDashboard(data){
   updateCard("terrestresCount",terrestres,previousValues.terrestres);
   updateCard("aereosCount",aereos,previousValues.aereos);
 
-  previousValues={total,alerta,vigilancia,curso,resolucao,conclusao,operacionais,terrestres,aereos};
+  previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
 }
 
