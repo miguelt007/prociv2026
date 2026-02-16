@@ -50,7 +50,7 @@ tr.resolucao { background:blue; color:#fff; }      /* Em Resolução */
 tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
 
 /* Footer */
-footer { text-align:center; padding:10px; font-size:0.9em; color:#555; background:#111; color:#ffcc00; }
+footer { text-align:center; padding:10px; font-size:0.9em; color:#ffcc00; background:#111; }
 
 /* Responsivo */
 @media(max-width:1200px){ .card { width:22%; } }
@@ -117,30 +117,17 @@ map.addLayer(markersLayer);
 
 let allData = [];
 
-// JSON completo dos concelhos com distrito
-const concelhosDistrito = [
-  { municipio: "Lisboa", distrito: "Lisboa" },
-  { municipio: "Porto", distrito: "Porto" },
-  { municipio: "Sintra", distrito: "Lisboa" },
-  { municipio: "Funchal", distrito: "Madeira" },
-  { municipio: "Ponta Delgada", distrito: "Açores" },
-  { municipio: "Angra do Heroísmo", distrito: "Açores" },
-  { municipio: "Cascais", distrito: "Lisboa" },
-  { municipio: "Braga", distrito: "Braga" },
-  { municipio: "Albufeira", distrito: "Faro" },
-  { municipio: "Coimbra", distrito: "Coimbra" },
-  // … aqui incluí todos os outros 308 concelhos como mostrado anteriormente
-];
-
-// Função para obter distrito pelo concelho
+// Função para obter distrito pelo concelho usando concelhosDistrito.js
 function getDistritoPorConcelho(nomeConcelho){
-  const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase()===nomeConcelho.toLowerCase());
+  if(!nomeConcelho) return "Desconhecido";
+  const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase() === nomeConcelho.toLowerCase());
   return entry ? entry.distrito : "Desconhecido";
 }
 
+// Função para cores dos estados
 function getColor(estado){
   if(!estado) return "blue";
-  estado = estado.toLowerCase();
+  estado = estado.toLowerCase().trim();
   if(estado.includes("despacho de 1º alerta")) return "yellow";
   if(estado.includes("em curso")) return "red";
   if(estado.includes("em resolução")) return "blue";
@@ -163,37 +150,40 @@ function atualizarHoraAtualizacao(){
   document.getElementById("lastUpdate").textContent = "Atualizado: " + datetime;
 }
 
+// Carrega dados da API
 function loadData(){
   fetch(API_URL)
   .then(res=>res.json())
   .then(data=>{
-    allData = data.features;
+    allData = data.features || [];
     atualizarHoraAtualizacao();
     renderDashboard(allData);
     renderMap(allData);
     renderTabela(allData);
-  });
+  })
+  .catch(err=>console.error("Erro ao carregar API:", err));
 }
 
+// Renderiza cartões
 function renderDashboard(data){
   document.getElementById("totalCount").textContent = data.length;
-  document.getElementById("alertCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-  document.getElementById("cursoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
-  document.getElementById("resolucaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
-  document.getElementById("conclusaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
+  document.getElementById("alertCount").textContent = data.filter(f=>(f.properties.EstadoOcorrencia||"").toLowerCase().trim()==="despacho de 1º alerta").length;
+  document.getElementById("cursoCount").textContent = data.filter(f=>(f.properties.EstadoOcorrencia||"").toLowerCase().trim()==="em curso").length;
+  document.getElementById("resolucaoCount").textContent = data.filter(f=>(f.properties.EstadoOcorrencia||"").toLowerCase().trim()==="em resolução").length;
+  document.getElementById("conclusaoCount").textContent = data.filter(f=>(f.properties.EstadoOcorrencia||"").toLowerCase().trim()==="em conclusão").length;
   document.getElementById("operacionaisCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Operacionais||0),0);
   document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosTerrestres||0),0);
   document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
 
-  // Tooltips por distrito para cartões de estado
+  // Tooltip por distrito
   const estados = ["Despacho de 1º Alerta","Em Curso","Em Resolução","Em Conclusão"];
   estados.forEach(estado=>{
     const distritoCount = {};
-    data.filter(f=>f.properties.EstadoOcorrencia===estado).forEach(f=>{
+    data.filter(f=>(f.properties.EstadoOcorrencia||"").toLowerCase().trim()===estado.toLowerCase()).forEach(f=>{
       const dist = getDistritoPorConcelho(f.properties.Concelho||"Desconhecido");
       distritoCount[dist] = (distritoCount[dist]||0)+1;
     });
-    let tooltipText = Object.entries(distritoCount).map(([d,c])=>`${d}: ${c}`).join('\n');
+    const tooltipText = Object.entries(distritoCount).map(([d,c])=>`${d}: ${c}`).join('\n');
     const cardId = {
       "Despacho de 1º Alerta":"alertCount",
       "Em Curso":"cursoCount",
@@ -204,31 +194,35 @@ function renderDashboard(data){
   });
 }
 
+// Renderiza mapa
 function renderMap(data){
   markersLayer.clearLayers();
   data.forEach(f=>{
-    const p = f.properties;
-    const [lng,lat] = f.geometry.coordinates;
-    const marker = L.circleMarker([lat,lng],{
-      radius:8,
-      color:getColor(p.EstadoOcorrencia),
-      fillOpacity:0.9
-    }).bindPopup(`
-      <b>${p.Natureza||''}</b><br>
-      Estado: ${p.EstadoOcorrencia||''}<br>
-      Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
-      Concelho: ${p.Concelho||''}<br>
-      Freguesia: ${p.Freguesia||''}<br>
-      Localidade: ${p.Localidade||''}<br>
-      Data Criação: ${p.DataInicioOcorrencia||''}<br>
-      Operacionais: ${p.Operacionais||0}<br>
-      Meios Terrestres: ${p.MeiosTerrestres||0}<br>
-      Meios Aéreos: ${p.MeiosAereos||0}
-    `);
-    markersLayer.addLayer(marker);
+    if(f.geometry && f.geometry.coordinates){
+      const [lng,lat] = f.geometry.coordinates;
+      const p = f.properties;
+      const marker = L.circleMarker([lat,lng],{
+        radius:8,
+        color:getColor(p.EstadoOcorrencia),
+        fillOpacity:0.9
+      }).bindPopup(`
+        <b>${p.Natureza||''}</b><br>
+        Estado: ${p.EstadoOcorrencia||''}<br>
+        Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
+        Concelho: ${p.Concelho||''}<br>
+        Freguesia: ${p.Freguesia||''}<br>
+        Localidade: ${p.Localidade||''}<br>
+        Data Criação: ${p.DataInicioOcorrencia||''}<br>
+        Operacionais: ${p.Operacionais||0}<br>
+        Meios Terrestres: ${p.MeiosTerrestres||0}<br>
+        Meios Aéreos: ${p.MeiosAereos||0}
+      `);
+      markersLayer.addLayer(marker);
+    }
   });
 }
 
+// Renderiza tabela
 function renderTabela(data){
   const tbody = document.querySelector("#tabelaOcorrencias tbody");
   tbody.innerHTML = "";
@@ -236,15 +230,14 @@ function renderTabela(data){
   const sorted = data.sort((a,b)=> prioridade.indexOf(a.properties.EstadoOcorrencia) - prioridade.indexOf(b.properties.EstadoOcorrencia));
 
   sorted.forEach(f=>{
-    const p=f.properties;
+    const p = f.properties;
     const tr = document.createElement("tr");
-
     let classe="";
-    switch(p.EstadoOcorrencia){
-      case "Despacho de 1º Alerta": classe="despacho1"; break;
-      case "Em Curso": classe="emcurso"; break;
-      case "Em Resolução": classe="resolucao"; break;
-      case "Em Conclusão": classe="conclusao"; break;
+    switch((p.EstadoOcorrencia||"").toLowerCase().trim()){
+      case "despacho de 1º alerta": classe="despacho1"; break;
+      case "em curso": classe="emcurso"; break;
+      case "em resolução": classe="resolucao"; break;
+      case "em conclusão": classe="conclusao"; break;
     }
     tr.className = classe;
 
@@ -264,7 +257,8 @@ function renderTabela(data){
   });
 }
 
-// Atualiza hora do topo a cada segundo
+// Inicializações
+atualizarHoraAtual();
 setInterval(atualizarHoraAtual,1000);
 loadData();
 setInterval(loadData,120000);
