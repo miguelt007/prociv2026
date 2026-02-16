@@ -18,35 +18,28 @@ header h1 { margin:0; font-size:1.5em; }
 header .last-update { font-size:0.9em; color:#fff; }
 
 /* Cards container */
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-}
-
+.cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
 /* Cartões */
 .card {
-  width: 18%;           /* desktop grande */
-  min-width: 150px;
-  color: white;
-  padding: 15px 10px;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  width:18%;
+  min-width:150px;
+  color:white;
+  padding:15px 10px;
+  border-radius:8px;
+  text-align:center;
+  box-shadow:0 3px 6px rgba(0,0,0,0.2);
   transition: transform 0.2s;
 }
 .card:hover { transform: translateY(-3px); }
-.card h2 { margin: 5px 0 0; font-size: 1.8em; }
+.card h2 { margin:5px 0 0; font-size:1.8em; }
 
 /* Cores dos estados */
-.yellow { background:#FFD700; color:#000; }  /* Despacho 1º Alerta */
-.orange { background:orange; }              /* Despacho */
-.red { background:red; }                     /* Em Curso */
-.blue { background:blue; }                   /* Em Resolução */
-.green { background:green; }                 /* Em Conclusão */
-.gray { background:#333; }                   /* Total Ocorrências e totais gerais */
+.yellow { background:#FFD700; color:#000; }
+.orange { background:orange; }
+.red { background:red; }
+.blue { background:blue; }
+.green { background:green; }
+.gray { background:#333; }
 
 /* Map */
 #map { height:400px; margin:10px; border-radius:6px; }
@@ -58,10 +51,17 @@ th { background:#111; color:white; }
 tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
+/* Cores por estado na tabela */
+tr.despacho1 { background:#FFD700; color:#000; }   /* Despacho 1º Alerta */
+tr.despacho { background:orange; color:#fff; }     /* Despacho */
+tr.emcurso { background:red; color:#fff; }         /* Em Curso */
+tr.resolucao { background:blue; color:#fff; }      /* Em Resolução */
+tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
+
 /* Responsivo */
-@media(max-width:1200px){ .card { width: 22%; } }
-@media(max-width:900px){ .card { width: 45%; } }
-@media(max-width:600px){ .cards { flex-direction: column; align-items: center; } .card { width: 90%; } }
+@media(max-width:1200px){ .card { width:22%; } }
+@media(max-width:900px){ .card { width:45%; } }
+@media(max-width:600px){ .cards { flex-direction: column; align-items: center; } .card { width:90%; } }
 </style>
 </head>
 <body>
@@ -188,9 +188,22 @@ function renderTabela(data){
   tbody.innerHTML = "";
   const prioridade = ["Despacho de 1º Alerta","Em Curso","Despacho","Em Resolução","Em Conclusão"];
   const sorted = data.sort((a,b)=> prioridade.indexOf(a.properties.EstadoOcorrencia) - prioridade.indexOf(b.properties.EstadoOcorrencia));
+
   sorted.forEach(f=>{
     const p=f.properties;
     const tr = document.createElement("tr");
+
+    // Classe por estado
+    let classe="";
+    switch(p.EstadoOcorrencia){
+      case "Despacho de 1º Alerta": classe="despacho1"; break;
+      case "Despacho": classe="despacho"; break;
+      case "Em Curso": classe="emcurso"; break;
+      case "Em Resolução": classe="resolucao"; break;
+      case "Em Conclusão": classe="conclusao"; break;
+    }
+    tr.className = classe;
+
     tr.innerHTML = `
       <td>${p.DataCriacao||''}</td>
       <td>${p.DataAtualizacao||''}</td>
