@@ -107,7 +107,8 @@ th{background:#111;color:white;}
 .pop{animation:popIcon 2s infinite;}
 @keyframes popIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
-footer { text-align:center; padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto;}
+/* Footer alinhado com topo */
+footer { padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto; box-sizing:border-box;}
 </style>
 </head>
 
@@ -176,29 +177,29 @@ let allData=[];
 let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
 function getDistrito(nome){
-const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
-return e?e.distrito:"Desconhecido";
+  const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
+  return e?e.distrito:"Desconhecido";
 }
 
 function animateCounter(id,start,end,duration=800){
-const el=document.getElementById(id);let startTime=null;
-function step(t){if(!startTime)startTime=t;
-let p=Math.min((t-startTime)/duration,1);
-el.textContent=Math.floor(start+(end-start)*p);
-if(p<1)requestAnimationFrame(step);}
-requestAnimationFrame(step);
+  const el=document.getElementById(id);let startTime=null;
+  function step(t){if(!startTime)startTime=t;
+  let p=Math.min((t-startTime)/duration,1);
+  el.textContent=Math.floor(start+(end-start)*p);
+  if(p<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
 }
 
 function updateCard(id,newVal,oldVal){
-animateCounter(id,oldVal,newVal);
-const card=document.getElementById(id).closest(".card");
-if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
+  animateCounter(id,oldVal,newVal);
+  const card=document.getElementById(id).closest(".card");
+  if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
 }
 
 function toggleAnimations(curso,alerta,aereos){
-document.querySelector(".fa-fire").style.animation=curso>0?"":"none";
-document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
-document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
+  document.querySelector(".fa-fire").style.animation=curso>0?"":"none";
+  document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
+  document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
 }
 
 // Top 3 ocorrências
