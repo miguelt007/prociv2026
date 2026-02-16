@@ -88,7 +88,7 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
       <th>Concelho</th>
       <th>Freguesia</th>
       <th>Natureza</th>
-      <th>Localização</th>
+      <th>Localidade</th>
       <th>Operacionais</th>
       <th>Meios Terrestres</th>
       <th>Meios Aéreos</th>
@@ -178,7 +178,7 @@ function renderMap(data){
       Distrito: ${p.Distrito||''}<br>
       Concelho: ${p.Concelho||''}<br>
       Freguesia: ${p.Freguesia||''}<br>
-      Localização: ${p.Localizacao||''}<br>
+      Localidade: ${p.Localidade||''}<br>
       Data Criação: ${p.DataInicioOcorrencia||''}<br>
       Operacionais: ${p.Operacionais||0}<br>
       Meios Terrestres: ${p.MeiosTerrestres||0}<br>
@@ -214,7 +214,7 @@ function renderTabela(data){
       <td>${p.Concelho||''}</td>
       <td>${p.Freguesia||''}</td>
       <td>${p.Natureza||''}</td>
-      <td>${p.Localizacao||''}</td>
+      <td>${p.Localidade||''}</td>
       <td>${p.Operacionais||0}</td>
       <td>${p.MeiosTerrestres||0}</td>
       <td>${p.MeiosAereos||0}</td>
