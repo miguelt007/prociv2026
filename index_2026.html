@@ -2,8 +2,7 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<title>Ocorrências ANEPC</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor ANEPC</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -14,93 +13,89 @@ body{
   background:#f4f6f9;
 }
 
-/* Container principal */
-.container{
-  width:95%;
-  max-width:1400px;
+/* LARGURA GLOBAL FIXA */
+.wrapper{
+  width:1400px;
   margin:0 auto;
 }
 
-/* Header */
+/* TOPO */
 header{
-  background:#1f2937;
+  background:#1e293b;
   color:white;
-  padding:20px 0;
-  text-align:center;
+  padding:15px;
+  font-size:22px;
+  font-weight:bold;
 }
 
-/* Cards */
-.top-cards{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
+/* CARTÕES */
+.top-container{
+  display:flex;
   gap:15px;
-  margin:20px 0;
+  margin:15px 0;
 }
 
 .top-card{
+  flex:1;
   background:white;
-  padding:15px;
-  border-radius:10px;
-  box-shadow:0 4px 8px rgba(0,0,0,0.1);
+  padding:12px;
+  border-radius:6px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
   font-size:14px;
 }
 
-/* Mapa */
+/* MAPA */
 #map{
   height:400px;
-  border-radius:10px;
-  margin-bottom:20px;
+  margin-bottom:15px;
+  border-radius:6px;
 }
 
-/* Tabela */
+/* TABELA */
 table{
   width:100%;
   border-collapse:collapse;
   background:white;
-  font-size:14px;
-}
-
-th,td{
-  padding:8px;
-  text-align:left;
+  font-size:13px;
 }
 
 th{
-  background:#111827;
+  background:#1e293b;
   color:white;
+  padding:8px;
 }
 
-tr:nth-child(even){
-  background:#f2f2f2;
+td{
+  padding:6px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
 }
 
-/* Estado com fundo */
+/* ESTADO - FUNDO DA PALAVRA */
 .estado{
-  padding:4px 8px;
-  border-radius:6px;
+  padding:3px 8px;
+  border-radius:4px;
   color:white;
   font-weight:bold;
-  display:inline-block;
 }
 
-.estado.em-curso{ background:#dc2626; }
-.estado.dominado{ background:#f59e0b; }
-.estado.resolvido{ background:#16a34a; }
+.estado-curso{ background:red; }
+.estado-resolucao{ background:green; }
+.estado-conclusao{ background:gray; }
 
-/* Footer */
+/* FOOTER */
 footer{
-  background:#1f2937;
+  background:#1e293b;
   color:white;
+  padding:10px;
   text-align:center;
-  padding:15px 0;
-  margin-top:30px;
+  margin-top:15px;
 }
 
-/* Ícone a piscar */
+/* PISCAR */
 .blinking-icon{
-  animation:blink 1s infinite;
+  animation: blink 1s infinite;
 }
-
 @keyframes blink{
   0%{opacity:1;}
   50%{opacity:0.2;}
@@ -108,67 +103,76 @@ footer{
 }
 </style>
 </head>
+
 <body>
 
-<header>
-  <div class="container">
-    <h1>Ocorrências ANEPC</h1>
-  </div>
-</header>
+<div class="wrapper">
 
-<div class="container">
+<header>Monitor de Ocorrências - ANEPC</header>
 
-  <div class="top-cards" id="topCards"></div>
+<div class="top-container" id="topCards"></div>
 
-  <div id="map"></div>
+<div id="map"></div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Data/Hora</th>
-        <th>Distrito</th>
-        <th>Concelho</th>
-        <th>Natureza</th>
-        <th>Estado</th>
-        <th>Operacionais</th>
-        <th>Terrestres</th>
-        <th>Aéreos</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-
-</div>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Distrito</th>
+<th>Concelho</th>
+<th>Natureza</th>
+<th>Estado</th>
+<th>Operacionais</th>
+<th>Terrestres</th>
+<th>Aéreos</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
 <footer>
-  <div class="container">
-    Dados fornecidos pela ANEPC
-  </div>
+Dados fornecidos pela ANEPC
 </footer>
+
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map').setView([39.5,-8],7);
+
+const map = L.map('map').setView([39.5, -8], 7);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   attribution:'© OpenStreetMap'
 }).addTo(map);
 
-const markers=L.layerGroup().addTo(map);
+const markers = L.layerGroup().addTo(map);
 
-/* Função distrito simples */
 function getDistrito(concelho){
-  return concelho || "-";
+  return "-"; // mantém simples
 }
 
 function getEstadoClass(estado){
   if(!estado) return "";
-  estado=estado.toLowerCase();
-  if(estado.includes("curso")) return "em-curso";
-  if(estado.includes("dominado")) return "dominado";
-  if(estado.includes("resolvido") || estado.includes("conclus")) return "resolvido";
+  if(estado.includes("Curso")) return "estado-curso";
+  if(estado.includes("Resolução")) return "estado-resolucao";
+  if(estado.includes("Conclus")) return "estado-conclusao";
   return "";
+}
+
+async function loadData(){
+  try{
+    const response = await fetch("/api/anepec");
+    const data = await response.json();
+
+    // 🔥 CORREÇÃO IMPORTANTE
+    const ocorrencias = data.features ? data.features : data;
+
+    render(ocorrencias);
+
+  }catch(e){
+    console.error("Erro ao carregar dados:", e);
+  }
 }
 
 function render(data){
@@ -177,9 +181,11 @@ function render(data){
   document.getElementById("topCards").innerHTML="";
   markers.clearLayers();
 
+  if(!Array.isArray(data)) return;
+
   // TOP 3
-  const top3=[...data]
-    .sort((a,b)=>(b.properties?.Operacionais||0)-(a.properties?.Operacionais||0))
+  const top3 = [...data]
+    .sort((a,b)=> (b.properties?.Operacionais||0) - (a.properties?.Operacionais||0))
     .slice(0,3);
 
   top3.forEach(f=>{
@@ -192,20 +198,18 @@ function render(data){
       <div>${p.Natureza||"-"}</div>
       <div>${p.EstadoOcorrencia||"-"}</div>
       <div><b>Operacionais:</b> ${p.Operacionais||0}</div>
-      <div><b>Terrestres:</b> ${p.MeiosTerrestres||0}</div>
-      <div><b>Aéreos:</b> ${p.MeiosAereos||0}</div>
     `;
     document.getElementById("topCards").appendChild(card);
   });
 
-  // Tabela + Mapa
+  // TABELA + MAPA
   data.forEach(f=>{
     const p=f.properties||{};
 
     const tr=document.createElement("tr");
     tr.innerHTML=`
       <td>${p.DataHora||"-"}</td>
-      <td>${getDistrito(p.Concelho)}</td>
+      <td>-</td>
       <td>${p.Concelho||"-"}</td>
       <td>${p.Natureza||"-"}</td>
       <td>
@@ -222,7 +226,7 @@ function render(data){
     if(f.geometry && f.geometry.coordinates){
       const [lng,lat]=f.geometry.coordinates;
 
-      const popup=`
+      const popupContent=`
         <strong>${p.Natureza||"Ocorrência"}</strong><br>
         Estado: ${p.EstadoOcorrencia||"-"}<br>
         Concelho: ${p.Concelho||"-"}<br>
@@ -231,7 +235,7 @@ function render(data){
 
       let marker;
 
-      if(p.EstadoOcorrencia==="Em Curso"){
+      if(p.EstadoOcorrencia && p.EstadoOcorrencia.includes("Curso")){
         const icon=L.divIcon({
           className:'blinking-icon',
           html:`<svg width="30" height="30">
@@ -241,7 +245,7 @@ function render(data){
           iconAnchor:[15,15]
         });
         marker=L.marker([lat,lng],{icon});
-      }else{
+      } else {
         marker=L.circleMarker([lat,lng],{
           radius:8,
           color:"blue",
@@ -249,19 +253,16 @@ function render(data){
         });
       }
 
-      marker.bindPopup(popup);
+      marker.bindPopup(popupContent);
       markers.addLayer(marker);
     }
 
   });
+
 }
 
-/* EXEMPLO TEMPORÁRIO (substitui pelo fetch da tua API) */
-fetch("https://your-backend-url.vercel.app/api/ocorrencias")
-  .then(r=>r.json())
-  .then(d=>render(d.features))
-  .catch(()=>console.log("Erro ao carregar dados"));
-</script>
+loadData();
 
+</script>
 </body>
 </html>
