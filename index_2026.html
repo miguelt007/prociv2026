@@ -1,64 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PROCIV 2026</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
 body { margin:0; font-family: Arial, sans-serif; display:flex; height:100vh; }
-
-#sidebar {
-  width:360px;
-  background:#111;
-  color:white;
-  padding:15px;
-  overflow-y:auto;
-}
-
-h2 { margin-top:0; color:#ff3c3c; }
-
-select {
-  width:100%;
-  padding:8px;
-  margin-bottom:10px;
-}
-
-.counter {
-  background:#1e1e1e;
-  padding:10px;
-  margin-bottom:15px;
-  border-radius:6px;
-}
-
-.card {
-  background:#1e1e1e;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
+#sidebar { width:360px; background:#111; color:white; padding:15px; overflow-y:auto; }
+h2 { margin-top:0; color:#ffcc00; }
+select { width:100%; padding:8px; margin-bottom:10px; }
+.counter { background:#1e1e1e; padding:10px; margin-bottom:15px; border-radius:6px; }
+.card { background:#1e1e1e; padding:10px; margin-bottom:10px; border-radius:6px; cursor:pointer; }
 .card:hover { background:#2a2a2a; }
-
 #map { flex:1; }
-
-.legend {
-  margin-top:15px;
-  font-size:14px;
-}
-.dot {
-  height:12px;
-  width:12px;
-  display:inline-block;
-  border-radius:50%;
-  margin-right:5px;
-}
-.red { background:red; }
+.legend { margin-top:15px; font-size:14px; }
+.dot { height:12px; width:12px; display:inline-block; border-radius:50%; margin-right:5px; }
 .orange { background:orange; }
+.yellow { background:yellow; }
+.red { background:red; }
+.blue { background:blue; }
 .green { background:green; }
 
 @media(max-width:900px){
@@ -72,33 +39,33 @@ select {
 <body>
 
 <div id="sidebar">
-  <h2>🔥 PROCIV 2026</h2>
+<h2>🔥 PROCIV 2026</h2>
 
-  <div class="counter">
-    Total: <span id="totalCount">0</span><br>
-    Ativos: <span id="activeCount">0</span>
-  </div>
+<div class="counter">
+Total: <span id="totalCount">0</span><br>
+Ativos: <span id="activeCount">0</span>
+</div>
 
-  <select id="estadoFilter">
-    <option value="todos">Todos Estados</option>
-  </select>
+<select id="estadoFilter">
+<option value="todos">Todos Estados</option>
+</select>
+<select id="distritoFilter">
+<option value="todos">Todos Distritos</option>
+</select>
+<select id="concelhoFilter">
+<option value="todos">Todos Concelhos</option>
+</select>
 
-  <select id="distritoFilter">
-    <option value="todos">Todos Distritos</option>
-  </select>
+<div id="lista"></div>
 
-  <select id="concelhoFilter">
-    <option value="todos">Todos Concelhos</option>
-  </select>
-
-  <div id="lista"></div>
-
-  <div class="legend">
-    <strong>Legenda:</strong><br>
-    <span class="dot red"></span>Ativo<br>
-    <span class="dot orange"></span>Em Curso<br>
-    <span class="dot green"></span>Encerrado
-  </div>
+<div class="legend">
+<strong>Legenda:</strong><br>
+<span class="dot yellow"></span>Despacho de 1º Alerta<br>
+<span class="dot orange"></span>Despacho<br>
+<span class="dot red"></span>Em Curso<br>
+<span class="dot blue"></span>Em Resolução<br>
+<span class="dot green"></span>Em Conclusão
+</div>
 </div>
 
 <div id="map"></div>
@@ -107,19 +74,20 @@ select {
 const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
 const map = L.map('map').setView([39.5,-8],7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-.addTo(map);
-
-let markersLayer = L.layerGroup().addTo(map);
+let markersLayer = L.markerClusterGroup();
+map.addLayer(markersLayer);
 let allData = [];
 
 function getColor(estado){
   if(!estado) return "blue";
   estado = estado.toLowerCase();
-  if(estado.includes("ativo")) return "red";
-  if(estado.includes("curso")) return "orange";
-  if(estado.includes("encerr")) return "green";
+  if(estado.includes("despacho de 1º alerta")) return "yellow";
+  if(estado.includes("despacho")) return "orange";
+  if(estado.includes("em curso")) return "red";
+  if(estado.includes("em resolução")) return "blue";
+  if(estado.includes("em conclusão")) return "green";
   return "blue";
 }
 
@@ -134,70 +102,66 @@ function loadData(){
 }
 
 function populateFilters(){
-  const estados = [...new Set(allData.map(f=>f.properties.Estado))];
-  const distritos = [...new Set(allData.map(f=>f.properties.Distrito))];
-
   const estadoSelect = document.getElementById("estadoFilter");
   const distritoSelect = document.getElementById("distritoFilter");
 
+  const estados = [...new Set(allData.map(f=>f.properties.Estado))];
+  const distritos = [...new Set(allData.map(f=>f.properties.Distrito))];
+
+  estadoSelect.innerHTML='<option value="todos">Todos Estados</option>';
   estados.forEach(e=>{
     if(e){
       const opt=document.createElement("option");
-      opt.value=e;
-      opt.textContent=e;
+      opt.value=e; opt.textContent=e;
       estadoSelect.appendChild(opt);
     }
   });
 
+  distritoSelect.innerHTML='<option value="todos">Todos Distritos</option>';
   distritos.forEach(d=>{
     if(d){
       const opt=document.createElement("option");
-      opt.value=d;
-      opt.textContent=d;
+      opt.value=d; opt.textContent=d;
       distritoSelect.appendChild(opt);
     }
   });
 }
 
 function applyFilters(){
-  const estado = document.getElementById("estadoFilter").value;
-  const distrito = document.getElementById("distritoFilter").value;
-  const concelho = document.getElementById("concelhoFilter").value;
+  const estado=document.getElementById("estadoFilter").value;
+  const distrito=document.getElementById("distritoFilter").value;
+  const concelho=document.getElementById("concelhoFilter").value;
 
-  let filtered = allData;
-
-  if(estado !== "todos")
-    filtered = filtered.filter(f=>f.properties.Estado===estado);
-
-  if(distrito !== "todos")
-    filtered = filtered.filter(f=>f.properties.Distrito===distrito);
-
-  if(concelho !== "todos")
-    filtered = filtered.filter(f=>f.properties.Concelho===concelho);
+  let filtered=allData;
+  if(estado!=="todos") filtered=filtered.filter(f=>f.properties.Estado===estado);
+  if(distrito!=="todos") filtered=filtered.filter(f=>f.properties.Distrito===distrito);
+  if(concelho!=="todos") filtered=filtered.filter(f=>f.properties.Concelho===concelho);
 
   render(filtered);
 }
 
 function render(data){
   markersLayer.clearLayers();
-  const lista = document.getElementById("lista");
+  const lista=document.getElementById("lista");
   lista.innerHTML="";
-
+  
+  // Contadores
   document.getElementById("totalCount").textContent=data.length;
   document.getElementById("activeCount").textContent=
-    data.filter(f=>f.properties.Estado?.toLowerCase().includes("ativo")).length;
+    data.filter(f=>["Despacho","Despacho de 1º Alerta","Em Curso"].includes(f.properties.Estado)).length;
+
+  // Ordenar por prioridade: Despacho de 1º Alerta > Em Curso > Despacho > Em Resolução > Em Conclusão
+  const prioridade=["Despacho de 1º Alerta","Em Curso","Despacho","Em Resolução","Em Conclusão"];
+  data.sort((a,b)=> prioridade.indexOf(a.properties.Estado) - prioridade.indexOf(b.properties.Estado));
 
   data.forEach(f=>{
     const p=f.properties;
     const [lng,lat]=f.geometry.coordinates;
-
     const marker=L.circleMarker([lat,lng],{
       radius:8,
       color:getColor(p.Estado),
-      fillOpacity:0.8
-    }).addTo(markersLayer);
-
-    marker.bindPopup(`
+      fillOpacity:0.9
+    }).bindPopup(`
       <b>${p.Natureza||''}</b><br>
       Estado: ${p.Estado||''}<br>
       Distrito: ${p.Distrito||''}<br>
@@ -210,18 +174,12 @@ function render(data){
       Terrestres: ${p.Terrestres||0}<br>
       Aéreos: ${p.Aereos||0}
     `);
+    markersLayer.addLayer(marker);
 
     const card=document.createElement("div");
     card.className="card";
-    card.innerHTML=`
-      <strong>${p.Natureza||''}</strong><br>
-      ${p.Concelho||''} - ${p.Distrito||''}<br>
-      Estado: ${p.Estado||''}
-    `;
-    card.onclick=()=>{
-      map.setView([lat,lng],12);
-      marker.openPopup();
-    };
+    card.innerHTML=`<strong>${p.Natureza||''}</strong><br>${p.Concelho||''} - ${p.Distrito||''}<br>Estado: ${p.Estado||''}`;
+    card.onclick=()=>{ map.setView([lat,lng],12); marker.openPopup(); };
     lista.appendChild(card);
   });
 
@@ -232,12 +190,10 @@ function updateConcelhos(data){
   const concelhos=[...new Set(data.map(f=>f.properties.Concelho))];
   const concelhoSelect=document.getElementById("concelhoFilter");
   concelhoSelect.innerHTML='<option value="todos">Todos Concelhos</option>';
-
   concelhos.forEach(c=>{
     if(c){
       const opt=document.createElement("option");
-      opt.value=c;
-      opt.textContent=c;
+      opt.value=c; opt.textContent=c;
       concelhoSelect.appendChild(opt);
     }
   });
@@ -249,6 +205,7 @@ document.getElementById("concelhoFilter").addEventListener("change",applyFilters
 
 loadData();
 setInterval(loadData,120000);
+
 </script>
 
 </body>
