@@ -261,6 +261,7 @@ const concelhosDistrito = [
   { municipio:"Sines", distrito:"Setúbal" },
   { municipio:"Sintra", distrito:"Lisboa" },
   { municipio:"Soure", distrito:"Coimbra" },
+  { municipio:"Sobral de Monte Agraço", distrito:"Lisboa" },
   { municipio:"Sátão", distrito:"Viseu" },
   { municipio:"Tarouca", distrito:"Viseu" },
   { municipio:"Tavira", distrito:"Faro" },
