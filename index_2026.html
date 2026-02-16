@@ -33,6 +33,10 @@ header .last-update { font-size:0.9em; color:#fff; }
 .green { background:green; }
 .gray { background:#333; }
 
+/* Filtros */
+.filtros { width:95%; margin:10px auto; display:flex; flex-wrap:wrap; gap:10px; }
+.filtros select { padding:5px 10px; border-radius:4px; border:1px solid #ccc; }
+
 /* Map */
 #map { height:400px; margin:10px; border-radius:6px; }
 
@@ -80,17 +84,23 @@ footer { text-align:center; padding:10px; font-size:0.9em; color:#555; backgroun
 
 <!-- Cartões -->
 <div class="cards">
-  <!-- Linha 1: cartões cinza -->
-  <div class="card gray" title=""><strong>Total Ocorrências</strong><br><h2 id="totalCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
+  <div class="card gray"><strong>Total Ocorrências</strong><br><h2 id="totalCount">0</h2></div>
+  <div class="card gray"><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
+  <div class="card gray"><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
+  <div class="card gray"><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
 
-  <!-- Linha 2: cartões coloridos por estado -->
-  <div class="card yellow" title=""><strong>Despacho de 1º Alerta</strong><br><h2 id="alertCount">0</h2></div>
-  <div class="card red" title=""><strong>Em Curso</strong><br><h2 id="cursoCount">0</h2></div>
-  <div class="card blue" title=""><strong>Em Resolução</strong><br><h2 id="resolucaoCount">0</h2></div>
-  <div class="card green" title=""><strong>Em Conclusão</strong><br><h2 id="conclusaoCount">0</h2></div>
+  <div class="card yellow"><strong>Despacho de 1º Alerta</strong><br><h2 id="alertCount">0</h2></div>
+  <div class="card red"><strong>Em Curso</strong><br><h2 id="cursoCount">0</h2></div>
+  <div class="card blue"><strong>Em Resolução</strong><br><h2 id="resolucaoCount">0</h2></div>
+  <div class="card green"><strong>Em Conclusão</strong><br><h2 id="conclusaoCount">0</h2></div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros">
+  <select id="filterEstado"><option value="">Todos os Estados</option></select>
+  <select id="filterDistrito"><option value="">Todos os Distritos</option></select>
+  <select id="filterConcelho"><option value="">Todos os Concelhos</option></select>
+  <select id="filterNatureza"><option value="">Todas as Naturezas</option></select>
 </div>
 
 <!-- Mapa -->
@@ -127,6 +137,7 @@ map.addLayer(markersLayer);
 
 let allData = [];
 
+// Funções de utilidade
 function getDistritoPorConcelho(nomeConcelho){
   const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase()===nomeConcelho.toLowerCase());
   return entry ? entry.distrito : "Desconhecido";
@@ -155,18 +166,19 @@ function atualizarHoraAtualizacao(){
   document.getElementById("lastUpdate").textContent = "Atualizado: " + datetime;
 }
 
+// Carrega dados da API
 function loadData(){
   fetch(API_URL)
   .then(res=>res.json())
   .then(data=>{
     allData = data.features;
     atualizarHoraAtualizacao();
-    renderDashboard(allData);
-    renderMap(allData);
-    renderTabela(allData);
+    popularFiltros();
+    aplicarFiltros(); // renderiza tudo inicialmente
   });
 }
 
+// Dashboard
 function renderDashboard(data){
   document.getElementById("totalCount").textContent = data.length;
   document.getElementById("alertCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
@@ -178,6 +190,7 @@ function renderDashboard(data){
   document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
 }
 
+// Mapa
 function renderMap(data){
   markersLayer.clearLayers();
   data.forEach(f=>{
@@ -185,7 +198,6 @@ function renderMap(data){
     const [lng,lat] = f.geometry.coordinates;
 
     if(p.EstadoOcorrencia === "Em Curso"){
-      // SVG pulsante
       const svgIcon = L.divIcon({
         className: 'blinking-icon',
         html: `<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
@@ -206,7 +218,7 @@ function renderMap(data){
       `).addTo(markersLayer);
     } else {
       const color = getColor(p.EstadoOcorrencia);
-      const marker = L.circleMarker([lat,lng],{
+      L.circleMarker([lat,lng],{
         radius: 8,
         color: color,
         fillColor: color,
@@ -222,12 +234,12 @@ function renderMap(data){
         Operacionais: ${p.Operacionais||0}<br>
         Meios Terrestres: ${p.MeiosTerrestres||0}<br>
         Meios Aéreos: ${p.MeiosAereos||0}
-      `);
-      markersLayer.addLayer(marker);
+      `).addTo(markersLayer);
     }
   });
 }
 
+// Tabela
 function renderTabela(data){
   const tbody = document.querySelector("#tabelaOcorrencias tbody");
   tbody.innerHTML = "";
@@ -263,6 +275,48 @@ function renderTabela(data){
   });
 }
 
+// Filtros
+function popularFiltros(){
+  const estados = [...new Set(allData.map(f=>f.properties.EstadoOcorrencia).filter(Boolean))];
+  const distritos = [...new Set(allData.map(f=>getDistritoPorConcelho(f.properties.Concelho)).filter(Boolean))];
+  const concelhos = [...new Set(allData.map(f=>f.properties.Concelho).filter(Boolean))];
+  const naturezas = [...new Set(allData.map(f=>f.properties.Natureza).filter(Boolean))];
+
+  const selectEstado = document.getElementById("filterEstado");
+  const selectDistrito = document.getElementById("filterDistrito");
+  const selectConcelho = document.getElementById("filterConcelho");
+  const selectNatureza = document.getElementById("filterNatureza");
+
+  estados.forEach(e=>{ if(!Array.from(selectEstado.options).some(o=>o.value===e)) selectEstado.add(new Option(e,e)); });
+  distritos.forEach(d=>{ if(!Array.from(selectDistrito.options).some(o=>o.value===d)) selectDistrito.add(new Option(d,d)); });
+  concelhos.forEach(c=>{ if(!Array.from(selectConcelho.options).some(o=>o.value===c)) selectConcelho.add(new Option(c,c)); });
+  naturezas.forEach(n=>{ if(!Array.from(selectNatureza.options).some(o=>o.value===n)) selectNatureza.add(new Option(n,n)); });
+}
+
+function aplicarFiltros(){
+  const estado = document.getElementById("filterEstado").value;
+  const distrito = document.getElementById("filterDistrito").value;
+  const concelho = document.getElementById("filterConcelho").value;
+  const natureza = document.getElementById("filterNatureza").value;
+
+  const filtrado = allData.filter(f=>{
+    return (!estado || f.properties.EstadoOcorrencia === estado) &&
+           (!distrito || getDistritoPorConcelho(f.properties.Concelho) === distrito) &&
+           (!concelho || f.properties.Concelho === concelho) &&
+           (!natureza || f.properties.Natureza === natureza);
+  });
+
+  renderDashboard(filtrado);
+  renderMap(filtrado);
+  renderTabela(filtrado);
+}
+
+// Listeners dos filtros
+["filterEstado","filterDistrito","filterConcelho","filterNatureza"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", aplicarFiltros);
+});
+
+// Atualiza hora do topo
 setInterval(atualizarHoraAtual,1000);
 loadData();
 setInterval(loadData,120000);
