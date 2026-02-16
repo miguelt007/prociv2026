@@ -12,72 +12,85 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
-body { margin:0; font-family: Arial, sans-serif; display:flex; height:100vh; }
-#sidebar { width:360px; background:#111; color:white; padding:15px; overflow-y:auto; }
-h2 { margin-top:0; color:#ffcc00; }
-select { width:100%; padding:8px; margin-bottom:10px; }
-.counter { background:#1e1e1e; padding:10px; margin-bottom:15px; border-radius:6px; }
-.card { background:#1e1e1e; padding:10px; margin-bottom:10px; border-radius:6px; cursor:pointer; }
-.card:hover { background:#2a2a2a; }
-#map { flex:1; }
-.legend { margin-top:15px; font-size:14px; }
-.dot { height:12px; width:12px; display:inline-block; border-radius:50%; margin-right:5px; }
-.orange { background:orange; }
+body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; }
+header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; }
+header h1 { margin:0; font-size:1.5em; }
+header .last-update { font-size:0.9em; color:#fff; }
+
+.cards { display:flex; flex-wrap:wrap; padding:10px; gap:10px; }
+.card { flex:1 1 150px; background:#222; color:white; padding:15px; border-radius:6px; text-align:center; }
+.card h2 { margin:0; font-size:1.5em; }
+.card p { margin:5px 0 0; }
+
+#map { height:400px; margin:10px; border-radius:6px; }
+
+table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; background:white; border-radius:6px; overflow:hidden; }
+th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
+th { background:#111; color:white; }
+tr:nth-child(even) { background:#f9f9f9; }
+tr:hover { background:#eee; }
+
+.legend { display:flex; gap:10px; margin:5px 0; flex-wrap:wrap; }
+.legend div { display:flex; align-items:center; gap:5px; font-size:0.9em; }
+.dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+
 .yellow { background:yellow; }
+.orange { background:orange; }
 .red { background:red; }
 .blue { background:blue; }
 .green { background:green; }
 
 @media(max-width:900px){
-  body{flex-direction:column;}
-  #sidebar{width:100%; height:40vh;}
-  #map{height:60vh;}
+  .cards { flex-direction:column; }
 }
 </style>
 </head>
-
 <body>
 
-<div id="sidebar">
-<h2>🔥 PROCIV 2026</h2>
+<header>
+  <h1>PROCIV 2026</h1>
+  <div class="last-update" id="lastUpdate">Atualizado: --/--/---- --:--:--</div>
+</header>
 
-<div class="counter">
-Total: <span id="totalCount">0</span><br>
-Ativos: <span id="activeCount">0</span>
-</div>
-
-<select id="estadoFilter">
-<option value="todos">Todos Estados</option>
-</select>
-<select id="distritoFilter">
-<option value="todos">Todos Distritos</option>
-</select>
-<select id="concelhoFilter">
-<option value="todos">Todos Concelhos</option>
-</select>
-
-<div id="lista"></div>
-
-<div class="legend">
-<strong>Legenda:</strong><br>
-<span class="dot yellow"></span>Despacho de 1º Alerta<br>
-<span class="dot orange"></span>Despacho<br>
-<span class="dot red"></span>Em Curso<br>
-<span class="dot blue"></span>Em Resolução<br>
-<span class="dot green"></span>Em Conclusão
-</div>
+<div class="cards">
+  <div class="card">Total<br><h2 id="totalCount">0</h2></div>
+  <div class="card">Despacho de 1º Alerta<br><h2 id="alertCount">0</h2></div>
+  <div class="card">Em Curso<br><h2 id="cursoCount">0</h2></div>
+  <div class="card">Despacho<br><h2 id="despachoCount">0</h2></div>
+  <div class="card">Em Resolução<br><h2 id="resolucaoCount">0</h2></div>
+  <div class="card">Em Conclusão<br><h2 id="conclusaoCount">0</h2></div>
 </div>
 
 <div id="map"></div>
 
+<table id="tabelaOcorrencias">
+  <thead>
+    <tr>
+      <th>Data Criação</th>
+      <th>Data Atualização</th>
+      <th>Estado</th>
+      <th>Distrito</th>
+      <th>Concelho</th>
+      <th>Freguesia</th>
+      <th>Natureza</th>
+      <th>Localização</th>
+      <th>Operacionais</th>
+      <th>Terrestres</th>
+      <th>Aéreos</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
 <script>
 const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
-const map = L.map('map').setView([39.5,-8],7);
+let map = L.map('map').setView([39.5,-8],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
 let markersLayer = L.markerClusterGroup();
 map.addLayer(markersLayer);
+
 let allData = [];
 
 function getColor(estado){
@@ -91,73 +104,38 @@ function getColor(estado){
   return "blue";
 }
 
+function atualizarHora(){
+  const now = new Date();
+  document.getElementById("lastUpdate").textContent = "Atualizado: " + now.toLocaleString('pt-PT');
+}
+
 function loadData(){
   fetch(API_URL)
   .then(res=>res.json())
   .then(data=>{
     allData = data.features;
-    populateFilters();
-    applyFilters();
+    atualizarHora();
+    renderDashboard(allData);
+    renderMap(allData);
+    renderTabela(allData);
   });
 }
 
-function populateFilters(){
-  const estadoSelect = document.getElementById("estadoFilter");
-  const distritoSelect = document.getElementById("distritoFilter");
-
-  const estados = [...new Set(allData.map(f=>f.properties.Estado))];
-  const distritos = [...new Set(allData.map(f=>f.properties.Distrito))];
-
-  estadoSelect.innerHTML='<option value="todos">Todos Estados</option>';
-  estados.forEach(e=>{
-    if(e){
-      const opt=document.createElement("option");
-      opt.value=e; opt.textContent=e;
-      estadoSelect.appendChild(opt);
-    }
-  });
-
-  distritoSelect.innerHTML='<option value="todos">Todos Distritos</option>';
-  distritos.forEach(d=>{
-    if(d){
-      const opt=document.createElement("option");
-      opt.value=d; opt.textContent=d;
-      distritoSelect.appendChild(opt);
-    }
-  });
+function renderDashboard(data){
+  document.getElementById("totalCount").textContent = data.length;
+  document.getElementById("alertCount").textContent = data.filter(f=>f.properties.Estado==="Despacho de 1º Alerta").length;
+  document.getElementById("cursoCount").textContent = data.filter(f=>f.properties.Estado==="Em Curso").length;
+  document.getElementById("despachoCount").textContent = data.filter(f=>f.properties.Estado==="Despacho").length;
+  document.getElementById("resolucaoCount").textContent = data.filter(f=>f.properties.Estado==="Em Resolução").length;
+  document.getElementById("conclusaoCount").textContent = data.filter(f=>f.properties.Estado==="Em Conclusão").length;
 }
 
-function applyFilters(){
-  const estado=document.getElementById("estadoFilter").value;
-  const distrito=document.getElementById("distritoFilter").value;
-  const concelho=document.getElementById("concelhoFilter").value;
-
-  let filtered=allData;
-  if(estado!=="todos") filtered=filtered.filter(f=>f.properties.Estado===estado);
-  if(distrito!=="todos") filtered=filtered.filter(f=>f.properties.Distrito===distrito);
-  if(concelho!=="todos") filtered=filtered.filter(f=>f.properties.Concelho===concelho);
-
-  render(filtered);
-}
-
-function render(data){
+function renderMap(data){
   markersLayer.clearLayers();
-  const lista=document.getElementById("lista");
-  lista.innerHTML="";
-  
-  // Contadores
-  document.getElementById("totalCount").textContent=data.length;
-  document.getElementById("activeCount").textContent=
-    data.filter(f=>["Despacho","Despacho de 1º Alerta","Em Curso"].includes(f.properties.Estado)).length;
-
-  // Ordenar por prioridade: Despacho de 1º Alerta > Em Curso > Despacho > Em Resolução > Em Conclusão
-  const prioridade=["Despacho de 1º Alerta","Em Curso","Despacho","Em Resolução","Em Conclusão"];
-  data.sort((a,b)=> prioridade.indexOf(a.properties.Estado) - prioridade.indexOf(b.properties.Estado));
-
   data.forEach(f=>{
-    const p=f.properties;
-    const [lng,lat]=f.geometry.coordinates;
-    const marker=L.circleMarker([lat,lng],{
+    const p = f.properties;
+    const [lng,lat] = f.geometry.coordinates;
+    const marker = L.circleMarker([lat,lng],{
       radius:8,
       color:getColor(p.Estado),
       fillOpacity:0.9
@@ -175,37 +153,36 @@ function render(data){
       Aéreos: ${p.Aereos||0}
     `);
     markersLayer.addLayer(marker);
-
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`<strong>${p.Natureza||''}</strong><br>${p.Concelho||''} - ${p.Distrito||''}<br>Estado: ${p.Estado||''}`;
-    card.onclick=()=>{ map.setView([lat,lng],12); marker.openPopup(); };
-    lista.appendChild(card);
-  });
-
-  updateConcelhos(data);
-}
-
-function updateConcelhos(data){
-  const concelhos=[...new Set(data.map(f=>f.properties.Concelho))];
-  const concelhoSelect=document.getElementById("concelhoFilter");
-  concelhoSelect.innerHTML='<option value="todos">Todos Concelhos</option>';
-  concelhos.forEach(c=>{
-    if(c){
-      const opt=document.createElement("option");
-      opt.value=c; opt.textContent=c;
-      concelhoSelect.appendChild(opt);
-    }
   });
 }
 
-document.getElementById("estadoFilter").addEventListener("change",applyFilters);
-document.getElementById("distritoFilter").addEventListener("change",applyFilters);
-document.getElementById("concelhoFilter").addEventListener("change",applyFilters);
+function renderTabela(data){
+  const tbody = document.querySelector("#tabelaOcorrencias tbody");
+  tbody.innerHTML = "";
+  const prioridade = ["Despacho de 1º Alerta","Em Curso","Despacho","Em Resolução","Em Conclusão"];
+  const sorted = data.sort((a,b)=> prioridade.indexOf(a.properties.Estado) - prioridade.indexOf(b.properties.Estado));
+  sorted.forEach(f=>{
+    const p=f.properties;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${p.DataCriacao||''}</td>
+      <td>${p.DataAtualizacao||''}</td>
+      <td>${p.Estado||''}</td>
+      <td>${p.Distrito||''}</td>
+      <td>${p.Concelho||''}</td>
+      <td>${p.Freguesia||''}</td>
+      <td>${p.Natureza||''}</td>
+      <td>${p.Localizacao||''}</td>
+      <td>${p.Operacionais||0}</td>
+      <td>${p.Terrestres||0}</td>
+      <td>${p.Aereos||0}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
 loadData();
 setInterval(loadData,120000);
-
 </script>
 
 </body>
