@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mapa de Ocorrências</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+</head>
+<body>
+  <div id="map" style="height: 100vh;"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([39.5, -8], 7);
+
+    L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    ).addTo(map);
+
+    fetch(
+      'https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*'
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        L.geoJSON(data).addTo(map);
+      });
+  </script>
+
+</body>
+</html>
