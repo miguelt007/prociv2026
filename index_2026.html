@@ -16,9 +16,9 @@
 
 <style>
 body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
-header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-header h1, footer h1 { margin:0; font-size:1.5em; }
-header .time, header .last-update, footer .text { color:white; font-size:0.9em; }
+header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+header h1 { margin:0; }
+header .time, header .last-update { color:white; font-size:0.9em; }
 
 .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
 .card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition:0.3s; }
@@ -37,26 +37,44 @@ header .time, header .last-update, footer .text { color:white; font-size:0.9em; 
 
 #map { height:400px; margin:10px; border-radius:6px; }
 
-table { width:95%; margin:10px auto 20px; border-collapse:collapse; background:white;}
-th,td{ padding:8px; border-bottom:1px solid #ddd;}
-th{background:#111;color:white; text-align:left;}
-td { vertical-align: middle; }
+table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; background:white;}
+th,td{ padding:8px; border-bottom:1px solid #ddd; text-align:left;}
+th{background:#111;color:white;}
 
-/* Badge para o estado */
-.estado-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size:0.9em;
-  display:inline-block;
-  color:white;
+tr.despacho1 td { border-left:3px solid #FFD700; color:#000; }
+tr.emcurso td { border-left:3px solid red; color:#000; }
+tr.resolucao td { border-left:3px solid blue; color:#000; }
+tr.conclusao td { border-left:3px solid green; color:#000; }
+tr.chegada td { border-left:3px solid orange; color:#000; }
+tr.vigilancia td { border-left:3px solid gray; color:#000; }
+
+footer { text-align:center; padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:center; align-items:center; }
+
+.top-ocorrencias {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  padding:10px;
+  margin-top:10px;
 }
-.estado-despacho { background:#FFD700; color:#000; }
-.estado-chegadaTO { background:#FFA500; } /* Laranja */
-.estado-vigilancia { background:#808080; } /* Cinzento */
-.estado-curso { background:red; }
-.estado-resolucao { background:blue; }
-.estado-conclusao { background:green; }
+
+.top-card {
+  width:22%;
+  min-width:200px;
+  background:white;
+  border-radius:8px;
+  border:3px solid green;
+  padding:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+  transition:0.3s;
+}
+
+.top-card h4 { margin:6px 0; font-size:1em; font-weight:bold; }
+.top-card p { margin:3px 0; font-size:0.9em; }
+
+@media(max-width:900px){ .top-card { width:45%; } }
+@media(max-width:600px){ .top-card { width:90%; } }
 
 /* Ícone pulsante mapa */
 .blinking-icon circle{animation:pulse 1s infinite;}
@@ -112,25 +130,27 @@ td { vertical-align: middle; }
 <select id="filterNatureza"><option value="">Todas Naturezas</option></select>
 </div>
 
+<!-- Top 4 ocorrências -->
+<div class="top-ocorrencias" id="topOcorrencias"></div>
+
 <div id="map"></div>
 
 <table>
 <thead>
 <tr>
 <th>Data</th><th>Estado</th><th>Distrito</th><th>Concelho</th>
-<th>Natureza</th><th>Operacionais</th><th>Terrestres</th><th>Aéreos</th>
+<th>Natureza</th><th>Operacionais</th>
+<th>Terrestres</th><th>Aéreos</th>
 </tr>
 </thead>
 <tbody id="tabelaBody"></tbody>
 </table>
 
-<footer>
-<h1></h1>
-<div class="text">Fonte de dados: ANEPC</div>
-</footer>
+<footer>Fonte de dados: ANEPC</footer>
 
 <script>
 const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+
 let map=L.map('map').setView([39.5,-8],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 let markers=L.markerClusterGroup();map.addLayer(markers);
@@ -139,91 +159,68 @@ let allData=[];
 let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
 function getDistrito(nome){
-  const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
-  return e?e.distrito:"Desconhecido";
-}
-
-function getEstadoClass(estado){
-  switch(estado){
-    case "Despacho de 1º Alerta": return "estado-despacho";
-    case "Chegada ao TO": return "estado-chegadaTO";
-    case "Vigilância": return "estado-vigilancia";
-    case "Em Curso": return "estado-curso";
-    case "Em Resolução": return "estado-resolucao";
-    case "Em Conclusão": return "estado-conclusao";
-    default: return "";
-  }
+const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
+return e?e.distrito:"Desconhecido";
 }
 
 function animateCounter(id,start,end,duration=800){
-  const el=document.getElementById(id);let startTime=null;
-  function step(t){if(!startTime)startTime=t;
-    let p=Math.min((t-startTime)/duration,1);
-    el.textContent=Math.floor(start+(end-start)*p);
-    if(p<1)requestAnimationFrame(step);}
-  requestAnimationFrame(step);
+const el=document.getElementById(id);let startTime=null;
+function step(t){if(!startTime)startTime=t;
+let p=Math.min((t-startTime)/duration,1);
+el.textContent=Math.floor(start+(end-start)*p);
+if(p<1)requestAnimationFrame(step);}
+requestAnimationFrame(step);
 }
 
-function updateCard(id,newVal,oldVal){
-  animateCounter(id,oldVal,newVal);
-  const card=document.getElementById(id).closest(".card");
-  if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
+function updateCard(id,newVal,oldVal,key){
+animateCounter(id,oldVal,newVal);
+const card=document.getElementById(id).closest(".card");
+if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
 }
 
 function toggleAnimations(curso,alerta,aereos){
-  document.querySelector(".fa-fire").style.animation=curso>0?"pulse":"none";
-  document.querySelector(".fa-bell").style.animation=alerta>0?"shake":"none";
-  document.querySelector(".fa-helicopter").style.animation=aereos>0?"rotate-slow":"none";
+document.querySelector(".fa-fire").style.animation=curso>0?"":"none";
+document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
+document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
 }
 
-function renderMap(data){
+function renderTopOcorrencias(data){
+  const container = document.getElementById("topOcorrencias");
+  container.innerHTML="";
+  const top4 = [...data].sort((a,b)=> (b.properties.Operacionais||0) - (a.properties.Operacionais||0)).slice(0,4);
+  top4.forEach(f=>{
+    const p=f.properties;
+    const distrito = getDistrito(p.Concelho);
+    const borderColor = p.EstadoOcorrencia==="Em Curso" ? "red" :
+                        p.EstadoOcorrencia==="Em Conclusão" ? "green" : "blue";
+    const card = document.createElement("div");
+    card.className = "top-card";
+    card.style.borderColor = borderColor;
+    card.innerHTML = `
+      <h4>${p.DataInicioOcorrencia||""}</h4>
+      <p><strong>${distrito} / ${p.Concelho||""}</strong></p>
+      <p>Tipo: ${p.Natureza||""}</p>
+      <p>Estado: ${p.EstadoOcorrencia||""}</p>
+      <p>Operacionais: ${p.Operacionais||0}</p>
+      <p>Terrestres: ${p.MeiosTerrestres||0}</p>
+      <p>Aéreos: ${p.MeiosAereos||0}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function render(data){
   markers.clearLayers();
-  data.forEach(f=>{
-    if(!f.geometry) return;
-    const [lng,lat]=f.geometry.coordinates;
-    const p=f.properties;
-    let layer;
-    if(p.EstadoOcorrencia==="Em Curso"){
-      const icon=L.divIcon({className:'blinking-icon',
-        html:`<svg width="30" height="30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
-        iconSize:[30,30],iconAnchor:[15,15]});
-      layer=L.marker([lat,lng],{icon});
-    }else{
-      layer=L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9});
-    }
-    layer.bindPopup(`<b>${p.Natureza||""}</b><br>Estado: ${p.EstadoOcorrencia||""}<br>Distrito: ${getDistrito(p.Concelho)}<br>Concelho: ${p.Concelho||""}<br>Operacionais:${p.Operacionais||0}<br>Terrestres:${p.MeiosTerrestres||0}<br>Aéreos:${p.MeiosAereos||0}`);
-    markers.addLayer(layer);
-  });
-}
 
-function renderTable(data){
-  const tbody=document.getElementById("tabelaBody");
-  tbody.innerHTML="";
-  data.forEach(f=>{
-    const p=f.properties;
-    const tr=document.createElement("tr");
-    const estadoClass=getEstadoClass(p.EstadoOcorrencia);
-    tr.innerHTML=`<td>${p.DataInicioOcorrencia||""}</td>
-<td><span class="estado-badge ${estadoClass}">${p.EstadoOcorrencia||""}</span></td>
-<td>${getDistrito(p.Concelho)}</td>
-<td>${p.Concelho||""}</td>
-<td>${p.Natureza||""}</td>
-<td>${p.Operacionais||0}</td>
-<td>${p.MeiosTerrestres||0}</td>
-<td>${p.MeiosAereos||0}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderDashboard(data){
-  const total=data.length;
-  const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-  const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
-  const resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
-  const conclusao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
-  const operacionais=data.reduce((s,f)=>s+(f.properties.Operacionais||0),0);
-  const terrestres=data.reduce((s,f)=>s+(f.properties.MeiosTerrestres||0),0);
-  const aereos=data.reduce((s,f)=>s+(f.properties.MeiosAereos||0),0);
+  // Dashboard
+  let total=data.length;
+  let alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
+  let curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
+  let resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
+  let conclusao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
+  let operacionais=data.reduce((s,f)=>s+(f.properties.Operacionais||0),0);
+  let terrestres=data.reduce((s,f)=>s+(f.properties.MeiosTerrestres||0),0);
+  let aereos=data.reduce((s,f)=>s+(f.properties.MeiosAereos||0),0);
 
   updateCard("totalCount",total,previousValues.total);
   updateCard("alertCount",alerta,previousValues.alerta);
@@ -236,46 +233,50 @@ function renderDashboard(data){
 
   previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
-}
 
-function render(data){
-  renderDashboard(data);
-  renderTable(data);
-  renderMap(data);
-  populateFilters(data);
-}
+  // Tabela e Mapa
+  const tbody=document.getElementById("tabelaBody");
+  tbody.innerHTML="";
+  data.forEach(f=>{
+    const p=f.properties;
+    let tr=document.createElement("tr");
+    let classe="";
+    switch(p.EstadoOcorrencia){
+      case "Despacho de 1º Alerta": classe="despacho1"; break;
+      case "Em Curso": classe="emcurso"; break;
+      case "Em Resolução": classe="resolucao"; break;
+      case "Em Conclusão": classe="conclusao"; break;
+      case "Chegada ao TO": classe="chegada"; break;
+      case "Vigilância": classe="vigilancia"; break;
+    }
+    tr.className=classe;
+    tr.innerHTML=`
+      <td>${p.DataInicioOcorrencia||""}</td>
+      <td>${p.EstadoOcorrencia||""}</td>
+      <td>${getDistrito(p.Concelho)}</td>
+      <td>${p.Concelho||""}</td>
+      <td>${p.Natureza||""}</td>
+      <td>${p.Operacionais||0}</td>
+      <td>${p.MeiosTerrestres||0}</td>
+      <td>${p.MeiosAereos||0}</td>
+    `;
+    tbody.appendChild(tr);
 
-function applyFilters(){
-  const estado=document.getElementById("filterEstado").value;
-  const distrito=document.getElementById("filterDistrito").value;
-  const concelho=document.getElementById("filterConcelho").value;
-  const natureza=document.getElementById("filterNatureza").value;
-
-  const filtered=allData.filter(d=>{
-    return (!estado || d.properties.EstadoOcorrencia===estado) &&
-           (!distrito || getDistrito(d.properties.Concelho)===distrito) &&
-           (!concelho || d.properties.Concelho===concelho) &&
-           (!natureza || d.properties.Natureza===natureza);
+    // Mapa
+    if(f.geometry){
+      const [lng,lat]=f.geometry.coordinates;
+      if(p.EstadoOcorrencia==="Em Curso"){
+        const icon=L.divIcon({className:'blinking-icon',
+          html:`<svg width="30" height="30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
+          iconSize:[30,30],iconAnchor:[15,15]});
+        L.marker([lat,lng],{icon}).addTo(markers);
+      }else{
+        L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9}).addTo(markers);
+      }
+    }
   });
-  render(filtered);
-}
 
-function populateFilters(data){
-  function fillSelect(id, options, allText){
-    const select=document.getElementById(id);
-    const current=select.value;
-    select.innerHTML=`<option value="">${allText}</option>`+options.map(o=>`<option value="${o}" ${o===current?'selected':''}>${o}</option>`).join('');
-  }
-
-  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia).filter(Boolean))];
-  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)).filter(Boolean))];
-  const concelhos=[...new Set(data.map(d=>d.properties.Concelho).filter(Boolean))];
-  const naturezas=[...new Set(data.map(d=>d.properties.Natureza).filter(Boolean))];
-
-  fillSelect("filterEstado", estados, "Todos Estados");
-  fillSelect("filterDistrito", distritos, "Todos Distritos");
-  fillSelect("filterConcelho", concelhos, "Todos Concelhos");
-  fillSelect("filterNatureza", naturezas, "Todas Naturezas");
+  renderTopOcorrencias(data);
 }
 
 function load(){
@@ -289,11 +290,6 @@ function load(){
 setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
 load();
 setInterval(load,120000);
-
-document.getElementById("filterEstado").addEventListener("change",applyFilters);
-document.getElementById("filterDistrito").addEventListener("change",applyFilters);
-document.getElementById("filterConcelho").addEventListener("change",applyFilters);
-document.getElementById("filterNatureza").addEventListener("change",applyFilters);
 </script>
 
 </body>
