@@ -15,21 +15,19 @@
 <script src="concelhosDistrito.js"></script>
 
 <style>
-/* --- (CSS IGUAL AO TEU, NÃO ALTERADO) --- */
 body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh; }
 .wrapper { width:95%; max-width:1400px; margin:0 auto; display:flex; flex-direction:column; }
+
 header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-.cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px 0; }
-.card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition:0.3s; }
-.card i { font-size:1.6em; margin-bottom:6px; display:block; }
-.gray{background:#333;} .yellow{background:#FFD700;color:#000;} .red{background:red;} .blue{background:blue;} .green{background:green;}
-.glow { box-shadow:0 0 15px rgba(255,255,255,0.9); }
-.filtros { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0;}
-.filtros select{ padding:6px 10px; border-radius:4px; }
+
 #map { height:500px; margin:10px 0; border-radius:6px; }
+
 table { width:100%; border-collapse:collapse; background:white; table-layout: fixed; }
 th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; word-wrap:break-word; }
 th { background:#111; color:white; }
+th.localidade, td.localidade { max-width:120px; white-space:normal; }
+th.natureza, td.natureza { max-width:150px; white-space:normal; }
+
 .estado-badge { display:inline-block; padding:2px 6px; border-radius:4px; color:white; font-weight:bold; font-size:0.9em; }
 .estado-despacho1 { background:#FFD700; color:#000; }
 .estado-emcurso   { background:red; }
@@ -37,8 +35,6 @@ th { background:#111; color:white; }
 .estado-conclusao { background:green; }
 .estado-chegada   { background:orange; }
 .estado-vigilancia{ background:gray; }
-.blinking-icon circle{animation:pulse 1s infinite;}
-@keyframes pulse{0%{fill-opacity:1;r:8;}50%{fill-opacity:0.3;r:12;}100%{fill-opacity:1;r:8;}}
 </style>
 </head>
 
@@ -63,8 +59,8 @@ th { background:#111; color:white; }
 <th>Distrito</th>
 <th>Concelho</th>
 <th>Freguesia</th>
-<th>Natureza</th>
-<th>Local</th>
+<th class="natureza">Natureza</th>
+<th class="localidade">Local</th>
 <th>OP</th>
 <th>MT</th>
 <th>MA</th>
@@ -100,14 +96,24 @@ function render(data){
     const p=f.properties;
     const tr=document.createElement("tr");
 
+    let estadoClass="";
+    switch(p.EstadoOcorrencia){
+      case "Despacho de 1º Alerta": estadoClass="estado-despacho1"; break;
+      case "Em Curso": estadoClass="estado-emcurso"; break;
+      case "Em Resolução": estadoClass="estado-resolucao"; break;
+      case "Em Conclusão": estadoClass="estado-conclusao"; break;
+      case "Chegada ao TO": estadoClass="estado-chegada"; break;
+      case "Vigilância": estadoClass="estado-vigilancia"; break;
+    }
+
     tr.innerHTML=`
       <td>${p.DataInicioOcorrencia||""}</td>
-      <td>${p.EstadoOcorrencia||""}</td>
+      <td><span class="estado-badge ${estadoClass}">${p.EstadoOcorrencia||""}</span></td>
       <td>${getDistrito(p.Concelho)}</td>
       <td>${p.Concelho||""}</td>
       <td>${p.Freguesia||""}</td>
-      <td>${p.Natureza||""}</td>
-      <td>${p.Localidade||""}</td>
+      <td class="natureza">${p.Natureza||""}</td>
+      <td class="localidade">${p.Localidade||""}</td>
       <td>${p.Operacionais||0}</td>
       <td>${p.MeiosTerrestres||0}</td>
       <td>${p.MeiosAereos||0}</td>
@@ -129,7 +135,6 @@ function render(data){
       `;
 
       let marker;
-
       if(p.EstadoOcorrencia==="Em Curso"){
         const icon=L.divIcon({
           className:'blinking-icon',
@@ -141,7 +146,7 @@ function render(data){
         });
         marker=L.marker([lat,lng],{icon});
       } else {
-        marker=L.circleMarker([lat,lng],{
+        marker=L.circleMarker([lat,lat],{
           radius:8,
           color:"blue",
           fillOpacity:0.9
