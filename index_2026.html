@@ -2,206 +2,253 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8" />
-<title>Ocorrências Ativas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PROCIV 2026</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  display: flex;
-  height: 100vh;
-}
+body { margin:0; font-family: Arial, sans-serif; display:flex; height:100vh; }
 
 #sidebar {
-  width: 350px;
-  background: #111;
-  color: white;
-  overflow-y: auto;
-  padding: 15px;
+  width:360px;
+  background:#111;
+  color:white;
+  padding:15px;
+  overflow-y:auto;
 }
 
-#sidebar h2 {
-  margin-top: 0;
-  color: #ff3c3c;
-}
-
-.ocorrencia {
-  border-bottom: 1px solid #333;
-  padding: 10px 0;
-  cursor: pointer;
-}
-
-.ocorrencia:hover {
-  background: #222;
-}
-
-#map {
-  flex: 1;
-}
-
-.filter {
-  margin-bottom: 10px;
-}
+h2 { margin-top:0; color:#ff3c3c; }
 
 select {
-  width: 100%;
-  padding: 5px;
+  width:100%;
+  padding:8px;
+  margin-bottom:10px;
 }
+
+.counter {
+  background:#1e1e1e;
+  padding:10px;
+  margin-bottom:15px;
+  border-radius:6px;
+}
+
+.card {
+  background:#1e1e1e;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.card:hover { background:#2a2a2a; }
+
+#map { flex:1; }
+
 .legend {
-  margin-top: 15px;
-  font-size: 14px;
-}
-.legend div {
-  margin-bottom: 5px;
+  margin-top:15px;
+  font-size:14px;
 }
 .dot {
-  height: 12px;
-  width: 12px;
-  display: inline-block;
-  margin-right: 5px;
-  border-radius: 50%;
+  height:12px;
+  width:12px;
+  display:inline-block;
+  border-radius:50%;
+  margin-right:5px;
 }
-.red { background: red; }
-.green { background: green; }
-.orange { background: orange; }
+.red { background:red; }
+.orange { background:orange; }
+.green { background:green; }
+
+@media(max-width:900px){
+  body{flex-direction:column;}
+  #sidebar{width:100%; height:40vh;}
+  #map{height:60vh;}
+}
 </style>
 </head>
 
 <body>
 
 <div id="sidebar">
-  <h2>🔥 Ocorrências</h2>
+  <h2>🔥 PROCIV 2026</h2>
 
-  <div class="filter">
-    <label>Filtrar por Estado:</label>
-    <select id="estadoFilter">
-      <option value="todos">Todos</option>
-    </select>
+  <div class="counter">
+    Total: <span id="totalCount">0</span><br>
+    Ativos: <span id="activeCount">0</span>
   </div>
+
+  <select id="estadoFilter">
+    <option value="todos">Todos Estados</option>
+  </select>
+
+  <select id="distritoFilter">
+    <option value="todos">Todos Distritos</option>
+  </select>
+
+  <select id="concelhoFilter">
+    <option value="todos">Todos Concelhos</option>
+  </select>
 
   <div id="lista"></div>
 
   <div class="legend">
-    <strong>Legenda:</strong>
-    <div><span class="dot red"></span>Ativo</div>
-    <div><span class="dot orange"></span>Em Curso</div>
-    <div><span class="dot green"></span>Encerrado</div>
+    <strong>Legenda:</strong><br>
+    <span class="dot red"></span>Ativo<br>
+    <span class="dot orange"></span>Em Curso<br>
+    <span class="dot green"></span>Encerrado
   </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-const apiURL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
-const map = L.map('map').setView([39.5, -8], 7);
+const map = L.map('map').setView([39.5,-8],7);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-  .addTo(map);
+.addTo(map);
 
 let markersLayer = L.layerGroup().addTo(map);
 let allData = [];
 
-function getColor(estado) {
-  if (!estado) return "blue";
+function getColor(estado){
+  if(!estado) return "blue";
   estado = estado.toLowerCase();
-  if (estado.includes("ativo")) return "red";
-  if (estado.includes("curso")) return "orange";
-  if (estado.includes("encerr")) return "green";
+  if(estado.includes("ativo")) return "red";
+  if(estado.includes("curso")) return "orange";
+  if(estado.includes("encerr")) return "green";
   return "blue";
 }
 
-function loadData() {
-  fetch(apiURL)
-    .then(res => res.json())
-    .then(data => {
-      allData = data.features;
-      render(allData);
-      populateEstados();
-    });
-}
-
-function render(data) {
-  markersLayer.clearLayers();
-  document.getElementById("lista").innerHTML = "";
-
-  data.forEach(feature => {
-    const props = feature.properties;
-    const coords = feature.geometry.coordinates;
-
-    const marker = L.circleMarker(
-      [coords[1], coords[0]],
-      {
-        radius: 8,
-        color: getColor(props.Estado),
-        fillOpacity: 0.8
-      }
-    ).addTo(markersLayer);
-
-    marker.bindPopup(`
-      <b>${props.Natureza || ''}</b><br>
-      Estado: ${props.Estado || ''}<br>
-      Distrito: ${props.Distrito || ''}<br>
-      Concelho: ${props.Concelho || ''}<br>
-      Freguesia: ${props.Freguesia || ''}<br>
-      Localização: ${props.Localizacao || ''}<br>
-      Data Criação: ${props.DataCriacao || ''}<br>
-      Data Atualização: ${props.DataAtualizacao || ''}<br>
-      Operacionais: ${props.Operacionais || 0}<br>
-      Terrestres: ${props.Terrestres || 0}<br>
-      Aéreos: ${props.Aereos || 0}
-    `);
-
-    const item = document.createElement("div");
-    item.className = "ocorrencia";
-    item.innerHTML = `
-      <strong>${props.Natureza || ''}</strong><br>
-      ${props.Concelho || ''} - ${props.Distrito || ''}<br>
-      Estado: ${props.Estado || ''}
-    `;
-
-    item.onclick = () => {
-      map.setView([coords[1], coords[0]], 12);
-      marker.openPopup();
-    };
-
-    document.getElementById("lista").appendChild(item);
+function loadData(){
+  fetch(API_URL)
+  .then(res=>res.json())
+  .then(data=>{
+    allData = data.features;
+    populateFilters();
+    applyFilters();
   });
 }
 
-function populateEstados() {
-  const estados = new Set(allData.map(f => f.properties.Estado));
-  const select = document.getElementById("estadoFilter");
+function populateFilters(){
+  const estados = [...new Set(allData.map(f=>f.properties.Estado))];
+  const distritos = [...new Set(allData.map(f=>f.properties.Distrito))];
 
-  estados.forEach(e => {
-    if (e) {
-      const option = document.createElement("option");
-      option.value = e;
-      option.textContent = e;
-      select.appendChild(option);
+  const estadoSelect = document.getElementById("estadoFilter");
+  const distritoSelect = document.getElementById("distritoFilter");
+
+  estados.forEach(e=>{
+    if(e){
+      const opt=document.createElement("option");
+      opt.value=e;
+      opt.textContent=e;
+      estadoSelect.appendChild(opt);
+    }
+  });
+
+  distritos.forEach(d=>{
+    if(d){
+      const opt=document.createElement("option");
+      opt.value=d;
+      opt.textContent=d;
+      distritoSelect.appendChild(opt);
     }
   });
 }
 
-document.getElementById("estadoFilter").addEventListener("change", function() {
-  const value = this.value;
-  if (value === "todos") {
-    render(allData);
-  } else {
-    const filtered = allData.filter(f => f.properties.Estado === value);
-    render(filtered);
-  }
-});
+function applyFilters(){
+  const estado = document.getElementById("estadoFilter").value;
+  const distrito = document.getElementById("distritoFilter").value;
+  const concelho = document.getElementById("concelhoFilter").value;
+
+  let filtered = allData;
+
+  if(estado !== "todos")
+    filtered = filtered.filter(f=>f.properties.Estado===estado);
+
+  if(distrito !== "todos")
+    filtered = filtered.filter(f=>f.properties.Distrito===distrito);
+
+  if(concelho !== "todos")
+    filtered = filtered.filter(f=>f.properties.Concelho===concelho);
+
+  render(filtered);
+}
+
+function render(data){
+  markersLayer.clearLayers();
+  const lista = document.getElementById("lista");
+  lista.innerHTML="";
+
+  document.getElementById("totalCount").textContent=data.length;
+  document.getElementById("activeCount").textContent=
+    data.filter(f=>f.properties.Estado?.toLowerCase().includes("ativo")).length;
+
+  data.forEach(f=>{
+    const p=f.properties;
+    const [lng,lat]=f.geometry.coordinates;
+
+    const marker=L.circleMarker([lat,lng],{
+      radius:8,
+      color:getColor(p.Estado),
+      fillOpacity:0.8
+    }).addTo(markersLayer);
+
+    marker.bindPopup(`
+      <b>${p.Natureza||''}</b><br>
+      Estado: ${p.Estado||''}<br>
+      Distrito: ${p.Distrito||''}<br>
+      Concelho: ${p.Concelho||''}<br>
+      Freguesia: ${p.Freguesia||''}<br>
+      Localização: ${p.Localizacao||''}<br>
+      Data Criação: ${p.DataCriacao||''}<br>
+      Data Atualização: ${p.DataAtualizacao||''}<br>
+      Operacionais: ${p.Operacionais||0}<br>
+      Terrestres: ${p.Terrestres||0}<br>
+      Aéreos: ${p.Aereos||0}
+    `);
+
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <strong>${p.Natureza||''}</strong><br>
+      ${p.Concelho||''} - ${p.Distrito||''}<br>
+      Estado: ${p.Estado||''}
+    `;
+    card.onclick=()=>{
+      map.setView([lat,lng],12);
+      marker.openPopup();
+    };
+    lista.appendChild(card);
+  });
+
+  updateConcelhos(data);
+}
+
+function updateConcelhos(data){
+  const concelhos=[...new Set(data.map(f=>f.properties.Concelho))];
+  const concelhoSelect=document.getElementById("concelhoFilter");
+  concelhoSelect.innerHTML='<option value="todos">Todos Concelhos</option>';
+
+  concelhos.forEach(c=>{
+    if(c){
+      const opt=document.createElement("option");
+      opt.value=c;
+      opt.textContent=c;
+      concelhoSelect.appendChild(opt);
+    }
+  });
+}
+
+document.getElementById("estadoFilter").addEventListener("change",applyFilters);
+document.getElementById("distritoFilter").addEventListener("change",applyFilters);
+document.getElementById("concelhoFilter").addEventListener("change",applyFilters);
 
 loadData();
-
-// Atualiza automaticamente a cada 2 minutos
-setInterval(loadData, 120000);
-
+setInterval(loadData,120000);
 </script>
 
 </body>
