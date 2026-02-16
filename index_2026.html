@@ -2,216 +2,265 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<title>Ocorrências ANEPC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PROCIV 2026</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-<script src="concelhosDistrito.js"></script>
 
 <style>
-body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh; }
-.wrapper { width:95%; max-width:1400px; margin:0 auto; display:flex; flex-direction:column; }
-
-header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-
-.cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px 0; }
-.card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); }
-.card i { font-size:1.6em; margin-bottom:6px; display:block; }
-
-.gray{background:#333;}
-.yellow{background:#FFD700;color:#000;}
-.red{background:red;}
-.blue{background:blue;}
-.green{background:green;}
-
-.filtros { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0;}
-.filtros select{ padding:6px 10px; border-radius:4px; }
-
-#map { height:400px; margin:10px 0; border-radius:6px; }
-
-table { width:100%; border-collapse:collapse; background:white; table-layout:fixed; }
-th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; word-wrap:break-word; }
-th { background:#111; color:white; }
-
-.estado-badge { display:inline-block; padding:2px 6px; border-radius:4px; color:white; font-weight:bold; font-size:0.9em; }
-.estado-despacho1 { background:#FFD700; color:#000; }
-.estado-emcurso   { background:red; }
-.estado-resolucao { background:blue; }
-.estado-conclusao { background:green; }
-.estado-chegada   { background:orange; }
-.estado-vigilancia{ background:gray; }
-
-.top-ocorrencias { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:10px; }
-.top-card { width:30%; min-width:200px; background:white; border-radius:8px; border:3px solid green; padding:12px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
-
-.blinking-icon circle{animation:pulse 1s infinite;}
-@keyframes pulse{0%{fill-opacity:1;r:8;}50%{fill-opacity:0.3;r:12;}100%{fill-opacity:1;r:8;}}
-</style>
-</head>
-
-<body>
-<div class="wrapper">
-
-<header>
-<h1>PROCIV 2026</h1>
-<div>
-<span id="currentTime"></span>
-<span id="lastUpdate"></span>
-</div>
-</header>
-
-<div class="cards">
-<div class="card gray"><strong>Total</strong><h2 id="totalCount">0</h2></div>
-<div class="card gray"><strong>Operacionais</strong><h2 id="operacionaisCount">0</h2></div>
-<div class="card gray"><strong>Terrestres</strong><h2 id="terrestresCount">0</h2></div>
-<div class="card gray"><strong>Aéreos</strong><h2 id="aereosCount">0</h2></div>
-<div class="card yellow"><strong>1º Alerta</strong><h2 id="alertCount">0</h2></div>
-<div class="card red"><strong>Em Curso</strong><h2 id="cursoCount">0</h2></div>
-<div class="card blue"><strong>Resolução</strong><h2 id="resolucaoCount">0</h2></div>
-<div class="card green"><strong>Conclusão</strong><h2 id="conclusaoCount">0</h2></div>
-</div>
-
-<div class="filtros">
-<select id="filterEstado"><option value="">Todos Estados</option></select>
-<select id="filterDistrito"><option value="">Todos Distritos</option></select>
-<select id="filterConcelho"><option value="">Todos Concelhos</option></select>
-<select id="filterNatureza"><option value="">Todas Naturezas</option></select>
-</div>
-
-<div class="top-ocorrencias" id="topOcorrencias"></div>
-<div id="map"></div>
-
-<table>
-<thead>
-<tr>
-<th>Data</th>
-<th>Estado</th>
-<th>Distrito</th>
-<th>Concelho</th>
-<th>Freguesia</th>
-<th>Natureza</th>
-<th>Localidade</th>
-<th>Operacionais</th>
-<th>Terrestres</th>
-<th>Aéreos</th>
-</tr>
-</thead>
-<tbody id="tabelaBody"></tbody>
-</table>
-
-<footer>
-<div>Fonte: ANEPC</div>
-</footer>
-</div>
-
-<script>
-const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
-
-let map=L.map('map').setView([39.5,-8],7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-let markers=L.markerClusterGroup();
-map.addLayer(markers);
-
-let allData=[];
-
-function getDistrito(nome){
-  const e=concelhosDistrito.find(c=>c.municipio?.toLowerCase()===nome?.toLowerCase());
-  return e ? e.distrito : "Desconhecido";
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f4f6f9;
 }
 
-setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
+/* Container principal */
+.container{
+  width:95%;
+  max-width:1400px;
+  margin:0 auto;
+}
+
+/* Header */
+header{
+  background:#1f2937;
+  color:white;
+  padding:20px 0;
+  text-align:center;
+}
+
+/* Cards */
+.top-cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+  margin:20px 0;
+}
+
+.top-card{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 4px 8px rgba(0,0,0,0.1);
+  font-size:14px;
+}
+
+/* Mapa */
+#map{
+  height:400px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+
+/* Tabela */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  font-size:14px;
+}
+
+th,td{
+  padding:8px;
+  text-align:left;
+}
+
+th{
+  background:#111827;
+  color:white;
+}
+
+tr:nth-child(even){
+  background:#f2f2f2;
+}
+
+/* Estado com fundo */
+.estado{
+  padding:4px 8px;
+  border-radius:6px;
+  color:white;
+  font-weight:bold;
+  display:inline-block;
+}
+
+.estado.em-curso{ background:#dc2626; }
+.estado.dominado{ background:#f59e0b; }
+.estado.resolvido{ background:#16a34a; }
+
+/* Footer */
+footer{
+  background:#1f2937;
+  color:white;
+  text-align:center;
+  padding:15px 0;
+  margin-top:30px;
+}
+
+/* Ícone a piscar */
+.blinking-icon{
+  animation:blink 1s infinite;
+}
+
+@keyframes blink{
+  0%{opacity:1;}
+  50%{opacity:0.2;}
+  100%{opacity:1;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Ocorrências ANEPC</h1>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="top-cards" id="topCards"></div>
+
+  <div id="map"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data/Hora</th>
+        <th>Distrito</th>
+        <th>Concelho</th>
+        <th>Natureza</th>
+        <th>Estado</th>
+        <th>Operacionais</th>
+        <th>Terrestres</th>
+        <th>Aéreos</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+</div>
+
+<footer>
+  <div class="container">
+    Dados fornecidos pela ANEPC
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const map=L.map('map').setView([39.5,-8],7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
+}).addTo(map);
+
+const markers=L.layerGroup().addTo(map);
+
+/* Função distrito simples */
+function getDistrito(concelho){
+  return concelho || "-";
+}
+
+function getEstadoClass(estado){
+  if(!estado) return "";
+  estado=estado.toLowerCase();
+  if(estado.includes("curso")) return "em-curso";
+  if(estado.includes("dominado")) return "dominado";
+  if(estado.includes("resolvido") || estado.includes("conclus")) return "resolvido";
+  return "";
+}
 
 function render(data){
+
+  document.getElementById("tbody").innerHTML="";
+  document.getElementById("topCards").innerHTML="";
   markers.clearLayers();
 
-  const tbody=document.getElementById("tabelaBody");
-  tbody.innerHTML="";
+  // TOP 3
+  const top3=[...data]
+    .sort((a,b)=>(b.properties?.Operacionais||0)-(a.properties?.Operacionais||0))
+    .slice(0,3);
 
-  data.forEach(f=>{
-    const p=f.properties;
-
-    let estadoClass="";
-    switch(p.EstadoOcorrencia){
-      case "Despacho de 1º Alerta": estadoClass="estado-despacho1"; break;
-      case "Em Curso": estadoClass="estado-emcurso"; break;
-      case "Em Resolução": estadoClass="estado-resolucao"; break;
-      case "Em Conclusão": estadoClass="estado-conclusao"; break;
-      case "Chegada ao TO": estadoClass="estado-chegada"; break;
-      case "Vigilância": estadoClass="estado-vigilancia"; break;
-    }
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${p.DataInicioOcorrencia||""}</td>
-        <td><span class="estado-badge ${estadoClass}">${p.EstadoOcorrencia||""}</span></td>
-        <td>${getDistrito(p.Concelho)}</td>
-        <td>${p.Concelho||""}</td>
-        <td>${p.Freguesia||""}</td>
-        <td>${p.Natureza||""}</td>
-        <td>${p.Localidade||""}</td>
-        <td>${p.Operacionais||0}</td>
-        <td>${p.MeiosTerrestres||0}</td>
-        <td>${p.MeiosAereos||0}</td>
-      </tr>
+  top3.forEach(f=>{
+    const p=f.properties||{};
+    const card=document.createElement("div");
+    card.className="top-card";
+    card.innerHTML=`
+      <div><strong>${p.DataHora||"-"}</strong></div>
+      <div>${p.Concelho||"-"}</div>
+      <div>${p.Natureza||"-"}</div>
+      <div>${p.EstadoOcorrencia||"-"}</div>
+      <div><b>Operacionais:</b> ${p.Operacionais||0}</div>
+      <div><b>Terrestres:</b> ${p.MeiosTerrestres||0}</div>
+      <div><b>Aéreos:</b> ${p.MeiosAereos||0}</div>
     `;
+    document.getElementById("topCards").appendChild(card);
+  });
 
-    if (f.geometry && f.geometry.coordinates) {
-      const [lng, lat] = f.geometry.coordinates;
+  // Tabela + Mapa
+  data.forEach(f=>{
+    const p=f.properties||{};
 
-      const popupContent = `
-        <strong>${p.Natureza || "Ocorrência"}</strong><br>
-        <b>Estado:</b> ${p.EstadoOcorrencia || "-"}<br>
-        <b>Distrito:</b> ${getDistrito(p.Concelho)}<br>
-        <b>Concelho:</b> ${p.Concelho || "-"}<br>
-        <b>Operacionais:</b> ${p.Operacionais || 0}<br>
-        <b>Terrestres:</b> ${p.MeiosTerrestres || 0}<br>
-        <b>Aéreos:</b> ${p.MeiosAereos || 0}
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${p.DataHora||"-"}</td>
+      <td>${getDistrito(p.Concelho)}</td>
+      <td>${p.Concelho||"-"}</td>
+      <td>${p.Natureza||"-"}</td>
+      <td>
+        <span class="estado ${getEstadoClass(p.EstadoOcorrencia)}">
+          ${p.EstadoOcorrencia||"-"}
+        </span>
+      </td>
+      <td>${p.Operacionais||0}</td>
+      <td>${p.MeiosTerrestres||0}</td>
+      <td>${p.MeiosAereos||0}</td>
+    `;
+    document.getElementById("tbody").appendChild(tr);
+
+    if(f.geometry && f.geometry.coordinates){
+      const [lng,lat]=f.geometry.coordinates;
+
+      const popup=`
+        <strong>${p.Natureza||"Ocorrência"}</strong><br>
+        Estado: ${p.EstadoOcorrencia||"-"}<br>
+        Concelho: ${p.Concelho||"-"}<br>
+        Operacionais: ${p.Operacionais||0}
       `;
 
       let marker;
 
-      if (p.EstadoOcorrencia === "Em Curso") {
-        const icon = L.divIcon({
-          className: 'blinking-icon',
-          html: `<svg width="30" height="30">
-                   <circle cx="15" cy="15" r="8" fill="red"/>
-                 </svg>`,
-          iconSize: [30, 30],
-          iconAnchor: [15, 15]
+      if(p.EstadoOcorrencia==="Em Curso"){
+        const icon=L.divIcon({
+          className:'blinking-icon',
+          html:`<svg width="30" height="30">
+                  <circle cx="15" cy="15" r="8" fill="red"/>
+                </svg>`,
+          iconSize:[30,30],
+          iconAnchor:[15,15]
         });
-        marker = L.marker([lat, lng], { icon });
-      } else {
-        marker = L.circleMarker([lat, lng], {
-          radius: 8,
-          color: "blue",
-          fillOpacity: 0.9
+        marker=L.marker([lat,lng],{icon});
+      }else{
+        marker=L.circleMarker([lat,lng],{
+          radius:8,
+          color:"blue",
+          fillOpacity:0.9
         });
       }
 
-      marker.bindPopup(popupContent);
+      marker.bindPopup(popup);
       markers.addLayer(marker);
     }
+
   });
 }
 
-function load(){
-  fetch(API_URL)
-    .then(r=>r.json())
-    .then(d=>{
-      allData=d.features||[];
-      render(allData);
-      document.getElementById("lastUpdate").textContent="Atualizado: "+new Date().toLocaleString("pt-PT");
-    });
-}
-
-load();
-setInterval(load,120000);
+/* EXEMPLO TEMPORÁRIO (substitui pelo fetch da tua API) */
+fetch("https://your-backend-url.vercel.app/api/ocorrencias")
+  .then(r=>r.json())
+  .then(d=>render(d.features))
+  .catch(()=>console.log("Erro ao carregar dados"));
 </script>
 
 </body>
