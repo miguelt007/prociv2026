@@ -30,16 +30,6 @@ th { background:#111; color:white; }
 tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
-.legend { display:flex; gap:10px; margin:5px 0; flex-wrap:wrap; }
-.legend div { display:flex; align-items:center; gap:5px; font-size:0.9em; }
-.dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
-
-.yellow { background:yellow; color:#000; }
-.orange { background:orange; }
-.red { background:red; }
-.blue { background:blue; }
-.green { background:green; }
-
 @media(max-width:900px){
   .cards { flex-direction:column; }
 }
@@ -53,6 +43,9 @@ tr:hover { background:#eee; }
 </header>
 
 <div class="cards">
+  <!-- Cartão Total Ocorrências -->
+  <div class="card" style="background:#333;">Total Ocorrências<br><h2 id="totalCount">0</h2></div>
+
   <!-- Cartões por Estado com cor -->
   <div class="card yellow" id="alertCard">Despacho de 1º Alerta<br><h2 id="alertCount">0</h2></div>
   <div class="card red" id="cursoCard">Em Curso<br><h2 id="cursoCount">0</h2></div>
@@ -60,9 +53,9 @@ tr:hover { background:#eee; }
   <div class="card blue" id="resolucaoCard">Em Resolução<br><h2 id="resolucaoCount">0</h2></div>
   <div class="card green" id="conclusaoCard">Em Conclusão<br><h2 id="conclusaoCount">0</h2></div>
 
-  <!-- Novos cartões de totais -->
+  <!-- Cartões de totais -->
   <div class="card" style="background:#333;" id="operacionaisCard">Total Operacionais<br><h2 id="operacionaisCount">0</h2></div>
-  <div class="card" style="background:#333;" id="terrestresCard">Total Terrestres<br><h2 id="terrestresCount">0</h2></div>
+  <div class="card" style="background:#333;" id="terrestresCard">Total Meios Terrestres<br><h2 id="terrestresCount">0</h2></div>
   <div class="card" style="background:#333;" id="aereosCard">Total Meios Aéreos<br><h2 id="aereosCount">0</h2></div>
 </div>
 
@@ -80,8 +73,8 @@ tr:hover { background:#eee; }
       <th>Natureza</th>
       <th>Localização</th>
       <th>Operacionais</th>
-      <th>Terrestres</th>
-      <th>Aéreos</th>
+      <th>Meios Terrestres</th>
+      <th>Meios Aéreos</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -126,6 +119,9 @@ function loadData(){
 }
 
 function renderDashboard(data){
+  // Total Ocorrências
+  document.getElementById("totalCount").textContent = data.length;
+
   // Cartões de Estado
   document.getElementById("alertCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
   document.getElementById("cursoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
@@ -135,8 +131,8 @@ function renderDashboard(data){
 
   // Cartões de totais
   document.getElementById("operacionaisCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Operacionais||0),0);
-  document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Terrestres||0),0);
-  document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Aereos||0),0);
+  document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosTerrestres||0),0);
+  document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
 }
 
 function renderMap(data){
@@ -158,8 +154,8 @@ function renderMap(data){
       Data Criação: ${p.DataCriacao||''}<br>
       Data Atualização: ${p.DataAtualizacao||''}<br>
       Operacionais: ${p.Operacionais||0}<br>
-      Terrestres: ${p.Terrestres||0}<br>
-      Aéreos: ${p.Aereos||0}
+      Meios Terrestres: ${p.MeiosTerrestres||0}<br>
+      Meios Aéreos: ${p.MeiosAereos||0}
     `);
     markersLayer.addLayer(marker);
   });
@@ -183,8 +179,8 @@ function renderTabela(data){
       <td>${p.Natureza||''}</td>
       <td>${p.Localizacao||''}</td>
       <td>${p.Operacionais||0}</td>
-      <td>${p.Terrestres||0}</td>
-      <td>${p.Aereos||0}</td>
+      <td>${p.MeiosTerrestres||0}</td>
+      <td>${p.MeiosAereos||0}</td>
     `;
     tbody.appendChild(tr);
   });
