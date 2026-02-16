@@ -16,9 +16,10 @@
 
 <style>
 body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
-header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-header h1 { margin:0; }
+header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+header h1, footer h1 { margin:0; font-size:1.5em; }
 header .time, header .last-update { color:white; font-size:0.9em; }
+footer .text { color:#ffcc00; font-size:0.9em; }
 
 .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
 .card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition:0.3s; }
@@ -40,6 +41,10 @@ header .time, header .last-update { color:white; font-size:0.9em; }
 table { width:95%; margin:10px auto 20px; border-collapse:collapse; background:white;}
 th,td{ padding:8px; border-bottom:1px solid #ddd;}
 th{background:#111;color:white;}
+tr.yellow{background:#FFD700;color:#000;}
+tr.red{background:red;color:#fff;}
+tr.blue{background:blue;color:#fff;}
+tr.green{background:green;color:#fff;}
 
 /* Ícone pulsante mapa */
 .blinking-icon circle{animation:pulse 1s infinite;}
@@ -107,7 +112,10 @@ th{background:#111;color:white;}
 <tbody id="tabelaBody"></tbody>
 </table>
 
-<footer>Fonte de dados: ANEPC</footer>
+<footer>
+<h1></h1>
+<div class="text">Fonte de dados: ANEPC</div>
+</footer>
 
 <script>
 const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
@@ -168,7 +176,6 @@ function renderMap(data){
         iconSize:[30,30],iconAnchor:[15,15]});
       layer=L.marker([lat,lng],{icon});
     }else{
-      layer=L.circleMarker([lat,lat],{radius:8,color:"blue",fillOpacity:0.9});
       layer=L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9});
     }
     layer.bindPopup(`<b>${p.Natureza||""}</b><br>Estado: ${p.EstadoOcorrencia||""}<br>Distrito: ${getDistrito(p.Concelho)}<br>Concelho: ${p.Concelho||""}<br>Operacionais:${p.Operacionais||0}<br>Terrestres:${p.MeiosTerrestres||0}<br>Aéreos:${p.MeiosAereos||0}`);
@@ -182,8 +189,9 @@ function renderTable(data){
   data.forEach(f=>{
     const p=f.properties;
     const tr=document.createElement("tr");
+    tr.className=getEstadoClass(p.EstadoOcorrencia);
     tr.innerHTML=`<td>${p.DataInicioOcorrencia||""}</td>
-<td class="${getEstadoClass(p.EstadoOcorrencia)}">${p.EstadoOcorrencia||""}</td>
+<td>${p.EstadoOcorrencia||""}</td>
 <td>${getDistrito(p.Concelho)}</td>
 <td>${p.Concelho||""}</td>
 <td>${p.Natureza||""}</td>
@@ -239,24 +247,24 @@ function applyFilters(){
   render(filtered);
 }
 
-// Preenche filtros
 function populateFilters(data){
-  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia))];
-  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)))];
-  const concelhos=[...new Set(data.map(d=>d.properties.Concelho))];
-  const naturezas=[...new Set(data.map(d=>d.properties.Natureza))];
+  function fillSelect(id, options, allText){
+    const select=document.getElementById(id);
+    const current=select.value;
+    select.innerHTML=`<option value="">${allText}</option>`+options.map(o=>`<option value="${o}" ${o===current?'selected':''}>${o}</option>`).join('');
+  }
 
-  const fEstado=document.getElementById("filterEstado");
-  fEstado.innerHTML=`<option value="">Todos Estados</option>`+estados.map(e=>`<option value="${e}">${e}</option>`).join('');
-  const fDistrito=document.getElementById("filterDistrito");
-  fDistrito.innerHTML=`<option value="">Todos Distritos</option>`+distritos.map(d=>`<option value="${d}">${d}</option>`).join('');
-  const fConcelho=document.getElementById("filterConcelho");
-  fConcelho.innerHTML=`<option value="">Todos Concelhos</option>`+concelhos.map(c=>`<option value="${c}">${c}</option>`).join('');
-  const fNatureza=document.getElementById("filterNatureza");
-  fNatureza.innerHTML=`<option value="">Todas Naturezas</option>`+naturezas.map(n=>`<option value="${n}">${n}</option>`).join('');
+  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia).filter(Boolean))];
+  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)).filter(Boolean))];
+  const concelhos=[...new Set(data.map(d=>d.properties.Concelho).filter(Boolean))];
+  const naturezas=[...new Set(data.map(d=>d.properties.Natureza).filter(Boolean))];
+
+  fillSelect("filterEstado", estados, "Todos Estados");
+  fillSelect("filterDistrito", distritos, "Todos Distritos");
+  fillSelect("filterConcelho", concelhos, "Todos Concelhos");
+  fillSelect("filterNatureza", naturezas, "Todas Naturezas");
 }
 
-// Carregar API
 function load(){
   fetch(API_URL).then(r=>r.json()).then(d=>{
     allData=d.features;
@@ -265,12 +273,10 @@ function load(){
   });
 }
 
-// Atualiza hora
 setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
 load();
 setInterval(load,120000);
 
-// Eventos filtros
 document.getElementById("filterEstado").addEventListener("change",applyFilters);
 document.getElementById("filterDistrito").addEventListener("change",applyFilters);
 document.getElementById("filterConcelho").addEventListener("change",applyFilters);
