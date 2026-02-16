@@ -2,212 +2,292 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<title>Monitorização de Ocorrências</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PROCIV 2026</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-<script src="concelhosDistrito.js"></script>
-
 <style>
-body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
-header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-header h1 { margin:0; }
-header .time, header .last-update { color:white; font-size:0.9em; }
 
-.cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
-.card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition:0.3s; }
-.card i { font-size:1.6em; margin-bottom:6px; display:block; }
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f1f5f9;
+}
 
-.gray{background:#333;}
-.yellow{background:#FFD700;color:#000;}
-.red{background:red;}
-.blue{background:blue;}
-.green{background:green;}
+/* ===== DASHBOARD ===== */
 
-.glow { box-shadow:0 0 15px rgba(255,255,255,0.9); }
+.dashboard {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+  padding:15px;
+}
 
-.filtros { width:95%; margin:10px auto; display:flex; flex-wrap:wrap; gap:10px;}
-.filtros select{ padding:6px 10px; border-radius:4px;}
+.card {
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  text-align:center;
+  position:relative;
+  transition:0.3s;
+}
 
-#map { height:400px; margin:10px; border-radius:6px; }
+.card h3 {
+  margin:5px 0;
+  font-size:14px;
+  color:#555;
+}
 
-table { width:95%; margin:10px auto 20px; border-collapse:collapse; background:white;}
-th,td{ padding:8px; border-bottom:1px solid #ddd;}
-th{background:#111;color:white;}
+.card span {
+  font-size:22px;
+  font-weight:bold;
+}
 
-footer { text-align:center; padding:10px; background:#111; color:#ffcc00; }
+.card i {
+  font-size:20px;
+  margin-bottom:5px;
+}
 
-/* Ícone pulsante mapa */
-.blinking-icon circle{animation:pulse 1s infinite;}
-@keyframes pulse{0%{fill-opacity:1;r:8;}50%{fill-opacity:0.3;r:12;}100%{fill-opacity:1;r:8;}}
+/* Glow quando aumenta */
+.glow {
+  box-shadow:0 0 15px rgba(0,123,255,0.9);
+}
 
-/* Animações ícones */
-.pulse{animation:pulseIcon 1.5s infinite;}
-@keyframes pulseIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
+/* Animações */
+@keyframes pulse {
+  0%{transform:scale(1);}
+  50%{transform:scale(1.2);}
+  100%{transform:scale(1);}
+}
 
-.rotate-slow{animation:rotateIcon 4s linear infinite;}
-.spin{animation:rotateIcon 2s linear infinite;}
-@keyframes rotateIcon{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+@keyframes shake {
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-3px);}
+  75%{transform:translateX(3px);}
+}
 
-.shake{animation:shakeIcon 1s infinite;}
-@keyframes shakeIcon{0%,100%{transform:rotate(0);}25%{transform:rotate(-10deg);}50%{transform:rotate(10deg);}75%{transform:rotate(-10deg);}}
+@keyframes spin {
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
 
-.bounce{animation:bounceIcon 2s infinite;}
-@keyframes bounceIcon{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.pulse { animation:pulse 1.2s infinite; }
+.shake { animation:shake 0.8s infinite; }
+.spin { animation:spin 2s linear infinite; }
 
-.slide{animation:slideIcon 3s infinite alternate;}
-@keyframes slideIcon{from{transform:translateX(-3px);}to{transform:translateX(3px);}}
+/* ===== FILTROS ===== */
 
-.pop{animation:popIcon 2s infinite;}
-@keyframes popIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+.filters {
+  display:flex;
+  gap:10px;
+  padding:10px 15px;
+  background:white;
+  flex-wrap:wrap;
+}
+
+.filters select {
+  padding:5px;
+}
+
+/* ===== MAPA ===== */
+
+#map {
+  height:400px;
+}
+
+/* ===== TABELA ===== */
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  font-size:14px;
+}
+
+th {
+  background:#1e293b;
+  color:white;
+  padding:8px;
+  text-align:left;
+}
+
+td {
+  padding:6px 8px;
+  border-bottom:1px solid #ddd;
+}
+
+/* Cores por estado */
+
+.estado-alerta {
+  background:#fff3cd;
+  color:#856404;
+  font-weight:bold;
+}
+
+.estado-curso {
+  background:#f8d7da;
+  color:#721c24;
+  font-weight:bold;
+}
+
+.estado-resolucao {
+  background:#d1ecf1;
+  color:#0c5460;
+  font-weight:bold;
+}
+
+.estado-conclusao {
+  background:#d4edda;
+  color:#155724;
+  font-weight:bold;
+}
+
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>PROCIV 2026</h1>
-<div>
-<span class="time" id="currentTime"></span>
-<span class="last-update" id="lastUpdate"></span>
-</div>
-</header>
-
-<div class="cards">
-<div class="card gray"><i class="fa-solid fa-triangle-exclamation pulse"></i><strong>Total</strong><h2 id="totalCount">0</h2></div>
-<div class="card gray"><i class="fa-solid fa-users bounce"></i><strong>Operacionais</strong><h2 id="operacionaisCount">0</h2></div>
-<div class="card gray"><i class="fa-solid fa-truck slide"></i><strong>Terrestres</strong><h2 id="terrestresCount">0</h2></div>
-<div class="card gray"><i class="fa-solid fa-helicopter rotate-slow"></i><strong>Aéreos</strong><h2 id="aereosCount">0</h2></div>
-<div class="card yellow"><i class="fa-solid fa-bell shake"></i><strong>1º Alerta</strong><h2 id="alertCount">0</h2></div>
-<div class="card red"><i class="fa-solid fa-fire pulse"></i><strong>Em Curso</strong><h2 id="cursoCount">0</h2></div>
-<div class="card blue"><i class="fa-solid fa-spinner spin"></i><strong>Resolução</strong><h2 id="resolucaoCount">0</h2></div>
-<div class="card green"><i class="fa-solid fa-circle-check pop"></i><strong>Conclusão</strong><h2 id="conclusaoCount">0</h2></div>
+<!-- DASHBOARD -->
+<div class="dashboard">
+  <div class="card"><i class="fa-solid fa-list"></i><h3>Total</h3><span id="totalCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-bell shake"></i><h3>1º Alerta</h3><span id="alertCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-fire pulse"></i><h3>Em Curso</h3><span id="cursoCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-water"></i><h3>Em Resolução</h3><span id="resolucaoCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-check"></i><h3>Em Conclusão</h3><span id="conclusaoCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-users"></i><h3>Operacionais</h3><span id="operacionaisCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-truck"></i><h3>Meios Terrestres</h3><span id="terrestresCount">0</span></div>
+  <div class="card"><i class="fa-solid fa-helicopter spin"></i><h3>Meios Aéreos</h3><span id="aereosCount">0</span></div>
 </div>
 
-<div class="filtros">
-<select id="filterEstado"><option value="">Todos Estados</option></select>
-<select id="filterDistrito"><option value="">Todos Distritos</option></select>
-<select id="filterConcelho"><option value="">Todos Concelhos</option></select>
-<select id="filterNatureza"><option value="">Todas Naturezas</option></select>
+<!-- FILTROS -->
+<div class="filters">
+  <select id="estadoFilter">
+    <option value="">Todos Estados</option>
+    <option>Despacho de 1º Alerta</option>
+    <option>Em Curso</option>
+    <option>Em Resolução</option>
+    <option>Em Conclusão</option>
+  </select>
 </div>
 
+<!-- MAPA -->
 <div id="map"></div>
 
+<!-- TABELA -->
 <table>
 <thead>
 <tr>
-<th>Data</th><th>Estado</th><th>Distrito</th><th>Concelho</th>
-<th>Natureza</th><th>Operacionais</th>
+  <th>Natureza</th>
+  <th>Distrito</th>
+  <th>Concelho</th>
+  <th>Estado</th>
+  <th>Operacionais</th>
 </tr>
 </thead>
-<tbody id="tabelaBody"></tbody>
+<tbody id="tableBody"></tbody>
 </table>
 
-<footer>Fonte de dados: ANEPC</footer>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
-let map=L.map('map').setView([39.5,-8],7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-let markers=L.markerClusterGroup();map.addLayer(markers);
+const map = L.map('map').setView([39.5,-8],7);
 
-let allData=[];
-let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
+}).addTo(map);
 
-function getDistrito(nome){
-const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
-return e?e.distrito:"Desconhecido";
-}
+let previousValues = {
+  total:0, alerta:0, curso:0,
+  resolucao:0, conclusao:0,
+  operacionais:0, terrestres:0, aereos:0
+};
 
 function animateCounter(id,start,end,duration=800){
-const el=document.getElementById(id);let startTime=null;
-function step(t){if(!startTime)startTime=t;
-let p=Math.min((t-startTime)/duration,1);
-el.textContent=Math.floor(start+(end-start)*p);
-if(p<1)requestAnimationFrame(step);}
-requestAnimationFrame(step);
+  const el=document.getElementById(id);
+  let startTime=null;
+  function step(timestamp){
+    if(!startTime) startTime=timestamp;
+    const progress=timestamp-startTime;
+    const percent=Math.min(progress/duration,1);
+    el.textContent=Math.floor(start+(end-start)*percent);
+    if(percent<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
-function updateCard(id,newVal,oldVal,key){
-animateCounter(id,oldVal,newVal);
-const card=document.getElementById(id).closest(".card");
-if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
+function updateCard(id,newVal,oldVal){
+  animateCounter(id,oldVal,newVal);
+  const card=document.getElementById(id).closest(".card");
+  if(newVal>oldVal){
+    card.classList.add("glow");
+    setTimeout(()=>card.classList.remove("glow"),1500);
+  }
 }
 
-function toggleAnimations(curso,alerta,aereos){
-document.querySelector(".fa-fire").style.animation=curso>0?"":"none";
-document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
-document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
+function getEstadoClass(estado){
+  switch(estado){
+    case "Despacho de 1º Alerta": return "estado-alerta";
+    case "Em Curso": return "estado-curso";
+    case "Em Resolução": return "estado-resolucao";
+    case "Em Conclusão": return "estado-conclusao";
+    default: return "";
+  }
 }
 
-function render(data){
-markers.clearLayers();
-let total=data.length;
-let alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-let curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
-let resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
-let conclusao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
-let operacionais=data.reduce((s,f)=>s+(f.properties.Operacionais||0),0);
-let terrestres=data.reduce((s,f)=>s+(f.properties.MeiosTerrestres||0),0);
-let aereos=data.reduce((s,f)=>s+(f.properties.MeiosAereos||0),0);
+async function loadData(){
 
-updateCard("totalCount",total,previousValues.total);
-updateCard("alertCount",alerta,previousValues.alerta);
-updateCard("cursoCount",curso,previousValues.curso);
-updateCard("resolucaoCount",resolucao,previousValues.resolucao);
-updateCard("conclusaoCount",conclusao,previousValues.conclusao);
-updateCard("operacionaisCount",operacionais,previousValues.operacionais);
-updateCard("terrestresCount",terrestres,previousValues.terrestres);
-updateCard("aereosCount",aereos,previousValues.aereos);
+  const res = await fetch("/api/ocorrencias");
+  const json = await res.json();
+  const data = json.features || [];
 
-previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
-toggleAnimations(curso,alerta,aereos);
+  document.getElementById("tableBody").innerHTML="";
 
-const tbody=document.getElementById("tabelaBody");
-tbody.innerHTML="";
-data.forEach(f=>{
-const p=f.properties;
-let tr=document.createElement("tr");
-tr.innerHTML=`<td>${p.DataInicioOcorrencia||""}</td>
-<td>${p.EstadoOcorrencia||""}</td>
-<td>${getDistrito(p.Concelho)}</td>
-<td>${p.Concelho||""}</td>
-<td>${p.Natureza||""}</td>
-<td>${p.Operacionais||0}</td>`;
-tbody.appendChild(tr);
+  data.forEach(f=>{
 
-if(f.geometry){
-const [lng,lat]=f.geometry.coordinates;
-if(p.EstadoOcorrencia==="Em Curso"){
-const icon=L.divIcon({className:'blinking-icon',
-html:`<svg width="30" height="30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
-iconSize:[30,30],iconAnchor:[15,15]});
-L.marker([lat,lng],{icon}).addTo(markers);
-}else{
-L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9}).addTo(markers);
-}
-}
-});
+    const row=document.createElement("tr");
+    const estadoClass=getEstadoClass(f.properties.EstadoOcorrencia);
+
+    row.innerHTML=`
+      <td>${f.properties.Natureza}</td>
+      <td>${f.properties.Distrito}</td>
+      <td>${f.properties.Concelho}</td>
+      <td class="${estadoClass}">${f.properties.EstadoOcorrencia}</td>
+      <td>${f.properties.Operacionais||0}</td>
+    `;
+
+    document.getElementById("tableBody").appendChild(row);
+  });
+
+  const total=data.length;
+  const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
+  const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
+  const resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
+  const conclusao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
+
+  const operacionais=data.reduce((s,f)=>s+(f.properties.Operacionais||0),0);
+  const terrestres=data.reduce((s,f)=>s+(f.properties.MeiosTerrestres||0),0);
+  const aereos=data.reduce((s,f)=>s+(f.properties.MeiosAereos||0),0);
+
+  updateCard("totalCount",total,previousValues.total);
+  updateCard("alertCount",alerta,previousValues.alerta);
+  updateCard("cursoCount",curso,previousValues.curso);
+  updateCard("resolucaoCount",resolucao,previousValues.resolucao);
+  updateCard("conclusaoCount",conclusao,previousValues.conclusao);
+  updateCard("operacionaisCount",operacionais,previousValues.operacionais);
+  updateCard("terrestresCount",terrestres,previousValues.terrestres);
+  updateCard("aereosCount",aereos,previousValues.aereos);
+
+  previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
 }
 
-function load(){
-fetch(API_URL).then(r=>r.json()).then(d=>{
-allData=d.features;
-render(allData);
-document.getElementById("lastUpdate").textContent="Atualizado: "+new Date().toLocaleString("pt-PT");
-});
-}
+loadData();
+setInterval(loadData,60000);
 
-setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
-load();
-setInterval(load,120000);
 </script>
 
 </body>
