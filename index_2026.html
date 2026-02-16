@@ -17,10 +17,17 @@ header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-con
 header h1 { margin:0; font-size:1.5em; }
 header .last-update { font-size:0.9em; color:#fff; }
 
-.cards { display:flex; flex-wrap:wrap; padding:10px; gap:10px; }
-.card { flex:1 1 150px; color:white; padding:15px; border-radius:6px; text-align:center; }
-.card h2 { margin:0; font-size:1.5em; }
-.card p { margin:5px 0 0; }
+.cards { display:flex; flex-wrap:wrap; padding:10px; gap:10px; justify-content:center; }
+.card { flex:1 1 150px; color:white; padding:20px; border-radius:8px; text-align:center; min-width:150px; max-width:200px; box-shadow:0 3px 6px rgba(0,0,0,0.2); }
+.card h2 { margin:5px 0 0; font-size:2em; }
+.card p { margin:0; font-weight:bold; }
+
+.yellow { background:#FFD700; color:#000; }   /* Despacho 1º Alerta */
+.orange { background:orange; }               /* Despacho */
+.red { background:red; }                      /* Em Curso */
+.blue { background:blue; }                    /* Em Resolução */
+.green { background:green; }                  /* Em Conclusão */
+.gray { background:#333; }                    /* Total Ocorrências e Totais gerais */
 
 #map { height:400px; margin:10px; border-radius:6px; }
 
@@ -31,7 +38,8 @@ tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
 @media(max-width:900px){
-  .cards { flex-direction:column; }
+  .cards { flex-direction:row; flex-wrap:wrap; justify-content:center; }
+  .card { flex:1 1 120px; }
 }
 </style>
 </head>
@@ -43,20 +51,20 @@ tr:hover { background:#eee; }
 </header>
 
 <div class="cards">
-  <!-- Cartão Total Ocorrências -->
-  <div class="card" style="background:#333;">Total Ocorrências<br><h2 id="totalCount">0</h2></div>
+  <!-- Total Ocorrências -->
+  <div class="card gray">Total Ocorrências<br><h2 id="totalCount">0</h2></div>
 
-  <!-- Cartões por Estado com cor -->
-  <div class="card yellow" id="alertCard">Despacho de 1º Alerta<br><h2 id="alertCount">0</h2></div>
-  <div class="card red" id="cursoCard">Em Curso<br><h2 id="cursoCount">0</h2></div>
-  <div class="card orange" id="despachoCard">Despacho<br><h2 id="despachoCount">0</h2></div>
-  <div class="card blue" id="resolucaoCard">Em Resolução<br><h2 id="resolucaoCount">0</h2></div>
-  <div class="card green" id="conclusaoCard">Em Conclusão<br><h2 id="conclusaoCount">0</h2></div>
+  <!-- Cartões de Estado -->
+  <div class="card yellow">Despacho de 1º Alerta<br><h2 id="alertCount">0</h2></div>
+  <div class="card red">Em Curso<br><h2 id="cursoCount">0</h2></div>
+  <div class="card orange">Despacho<br><h2 id="despachoCount">0</h2></div>
+  <div class="card blue">Em Resolução<br><h2 id="resolucaoCount">0</h2></div>
+  <div class="card green">Em Conclusão<br><h2 id="conclusaoCount">0</h2></div>
 
   <!-- Cartões de totais -->
-  <div class="card" style="background:#333;" id="operacionaisCard">Total Operacionais<br><h2 id="operacionaisCount">0</h2></div>
-  <div class="card" style="background:#333;" id="terrestresCard">Total Meios Terrestres<br><h2 id="terrestresCount">0</h2></div>
-  <div class="card" style="background:#333;" id="aereosCard">Total Meios Aéreos<br><h2 id="aereosCount">0</h2></div>
+  <div class="card gray">Total Operacionais<br><h2 id="operacionaisCount">0</h2></div>
+  <div class="card gray">Total Meios Terrestres<br><h2 id="terrestresCount">0</h2></div>
+  <div class="card gray">Total Meios Aéreos<br><h2 id="aereosCount">0</h2></div>
 </div>
 
 <div id="map"></div>
