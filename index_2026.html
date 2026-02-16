@@ -53,7 +53,6 @@ td { vertical-align: middle; }
   color:white;
 }
 .estado-despacho { background:#FFD700; color:#000; }
-.estado-chegada { background:#FFA500; } /* Laranja */
 .estado-vigilancia { background:#808080; } /* Cinzento */
 .estado-curso { background:red; }
 .estado-resolucao { background:blue; }
@@ -101,7 +100,6 @@ td { vertical-align: middle; }
 <div class="card gray"><i class="fa-solid fa-truck slide"></i><strong>Terrestres</strong><h2 id="terrestresCount">0</h2></div>
 <div class="card gray"><i class="fa-solid fa-helicopter rotate-slow"></i><strong>Aéreos</strong><h2 id="aereosCount">0</h2></div>
 <div class="card yellow"><i class="fa-solid fa-bell shake"></i><strong>1º Alerta</strong><h2 id="alertCount">0</h2></div>
-<div class="card orange"><i class="fa-solid fa-location-dot pulse"></i><strong>Chegada TO</strong><h2 id="chegadaCount">0</h2></div>
 <div class="card gray"><i class="fa-solid fa-eye"></i><strong>Vigilância</strong><h2 id="vigilanciaCount">0</h2></div>
 <div class="card red"><i class="fa-solid fa-fire pulse"></i><strong>Em Curso</strong><h2 id="cursoCount">0</h2></div>
 <div class="card blue"><i class="fa-solid fa-spinner spin"></i><strong>Resolução</strong><h2 id="resolucaoCount">0</h2></div>
@@ -133,14 +131,13 @@ td { vertical-align: middle; }
 </footer>
 
 <script>
-// API e mapa
 const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 let map=L.map('map').setView([39.5,-8],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 let markers=L.markerClusterGroup();map.addLayer(markers);
 
 let allData=[];
-let previousValues={total:0,alerta:0,chegada:0,vigilancia:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
+let previousValues={total:0,alerta:0,vigilancia:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
 function getDistrito(nome){
   const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
@@ -150,7 +147,6 @@ function getDistrito(nome){
 function getEstadoClass(estado){
   switch(estado){
     case "Despacho de 1º Alerta": return "estado-despacho";
-    case "Chegada ao TO": return "estado-chegada";
     case "Vigilância": return "estado-vigilancia";
     case "Em Curso": return "estado-curso";
     case "Em Resolução": return "estado-resolucao";
@@ -159,7 +155,6 @@ function getEstadoClass(estado){
   }
 }
 
-// Funções de contagem e animação
 function animateCounter(id,start,end,duration=800){
   const el=document.getElementById(id);let startTime=null;
   function step(t){if(!startTime)startTime=t;
@@ -181,7 +176,6 @@ function toggleAnimations(curso,alerta,aereos){
   document.querySelector(".fa-helicopter").style.animation=aereos>0?"rotate-slow":"none";
 }
 
-// Render mapa
 function renderMap(data){
   markers.clearLayers();
   data.forEach(f=>{
@@ -202,7 +196,6 @@ function renderMap(data){
   });
 }
 
-// Render tabela
 function renderTable(data){
   const tbody=document.getElementById("tabelaBody");
   tbody.innerHTML="";
@@ -222,11 +215,9 @@ function renderTable(data){
   });
 }
 
-// Dashboard
 function renderDashboard(data){
   const total=data.length;
   const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-  const chegada=data.filter(f=>f.properties.EstadoOcorrencia==="Chegada ao TO").length;
   const vigilancia=data.filter(f=>f.properties.EstadoOcorrencia==="Vigilância").length;
   const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
   const resolucao=data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
@@ -237,7 +228,6 @@ function renderDashboard(data){
 
   updateCard("totalCount",total,previousValues.total);
   updateCard("alertCount",alerta,previousValues.alerta);
-  updateCard("chegadaCount",chegada,previousValues.chegada);
   updateCard("vigilanciaCount",vigilancia,previousValues.vigilancia);
   updateCard("cursoCount",curso,previousValues.curso);
   updateCard("resolucaoCount",resolucao,previousValues.resolucao);
@@ -246,7 +236,7 @@ function renderDashboard(data){
   updateCard("terrestresCount",terrestres,previousValues.terrestres);
   updateCard("aereosCount",aereos,previousValues.aereos);
 
-  previousValues={total,alerta,chegada,vigilancia,curso,resolucao,conclusao,operacionais,terrestres,aereos};
+  previousValues={total,alerta,vigilancia,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
 }
 
@@ -257,7 +247,6 @@ function render(data){
   populateFilters(data);
 }
 
-// Filtros
 function applyFilters(){
   const estado=document.getElementById("filterEstado").value;
   const distrito=document.getElementById("filterDistrito").value;
@@ -291,7 +280,6 @@ function populateFilters(data){
   fillSelect("filterNatureza", naturezas, "Todas Naturezas");
 }
 
-// Load
 function load(){
   fetch(API_URL).then(r=>r.json()).then(d=>{
     allData=d.features;
@@ -308,7 +296,6 @@ document.getElementById("filterEstado").addEventListener("change",applyFilters);
 document.getElementById("filterDistrito").addEventListener("change",applyFilters);
 document.getElementById("filterConcelho").addEventListener("change",applyFilters);
 document.getElementById("filterNatureza").addEventListener("change",applyFilters);
-
 </script>
 
 </body>
