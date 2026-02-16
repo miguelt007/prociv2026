@@ -13,10 +13,10 @@
 
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
-header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-header h1, footer h1 { margin:0; font-size:1.5em; }
-header .time, footer .time { font-size:0.9em; color:#fff; margin-right:15px; }
-header .last-update, footer .last-update { font-size:0.9em; color:#fff; }
+header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+header h1 { margin:0; font-size:1.5em; }
+header .time { font-size:0.9em; color:#fff; margin-right:15px; }
+header .last-update { font-size:0.9em; color:#fff; }
 
 /* Cards container */
 .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
@@ -47,6 +47,9 @@ tr.despacho1 { background:#FFD700; color:#000; }   /* Despacho 1º Alerta */
 tr.emcurso { background:red; color:#fff; }         /* Em Curso */
 tr.resolucao { background:blue; color:#fff; }      /* Em Resolução */
 tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
+
+/* Footer */
+footer { text-align:center; padding:10px; font-size:0.9em; color:#555; background:#111; color:#ffcc00; }
 
 /* Responsivo */
 @media(max-width:1200px){ .card { width:22%; } }
@@ -101,13 +104,7 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
   <tbody></tbody>
 </table>
 
-<footer>
-  <h1>Fonte de dados: ANEPC</h1>
-  <div style="display:flex; align-items:center; flex-wrap:wrap;">
-    <div class="time" id="footerTime">--/--/---- --:--:--</div>
-    <div class="last-update" id="footerUpdate">Atualizado: --/--/---- --:--:--</div>
-  </div>
-</footer>
+<footer>Fonte de dados: ANEPC</footer>
 
 <script>
 const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
@@ -135,7 +132,6 @@ function atualizarHoraAtual(){
   const dia = now.toLocaleDateString('pt-PT');
   const hora = now.toLocaleTimeString('pt-PT');
   document.getElementById("currentTime").textContent = `${dia} ${hora}`;
-  document.getElementById("footerTime").textContent = `${dia} ${hora}`;
 }
 
 // Atualiza hora da última atualização
@@ -143,7 +139,6 @@ function atualizarHoraAtualizacao(){
   const now = new Date();
   const datetime = now.toLocaleString('pt-PT');
   document.getElementById("lastUpdate").textContent = "Atualizado: " + datetime;
-  document.getElementById("footerUpdate").textContent = "Atualizado: " + datetime;
 }
 
 function loadData(){
@@ -247,7 +242,7 @@ function renderTabela(data){
   });
 }
 
-// Atualiza hora do topo e footer a cada segundo
+// Atualiza hora do topo a cada segundo
 setInterval(atualizarHoraAtual,1000);
 loadData();
 setInterval(loadData,120000);
