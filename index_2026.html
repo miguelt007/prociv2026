@@ -41,13 +41,6 @@ table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; backgro
 th,td{ padding:8px; border-bottom:1px solid #ddd; text-align:left;}
 th{background:#111;color:white;}
 
-tr.despacho1 td { border-left:3px solid #FFD700; color:#000; }
-tr.emcurso td { border-left:3px solid red; color:#000; }
-tr.resolucao td { border-left:3px solid blue; color:#000; }
-tr.conclusao td { border-left:3px solid green; color:#000; }
-tr.chegada td { border-left:3px solid orange; color:#000; }
-tr.vigilancia td { border-left:3px solid gray; color:#000; }
-
 footer { text-align:center; padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:center; align-items:center; }
 
 .top-ocorrencias {
@@ -60,7 +53,7 @@ footer { text-align:center; padding:10px; background:#111; color:#ffcc00; displa
 }
 
 .top-card {
-  width:22%;
+  width:30%;
   min-width:200px;
   background:white;
   border-radius:8px;
@@ -130,17 +123,25 @@ footer { text-align:center; padding:10px; background:#111; color:#ffcc00; displa
 <select id="filterNatureza"><option value="">Todas Naturezas</option></select>
 </div>
 
-<!-- Top 4 ocorrências -->
+<!-- Top 3 ocorrências -->
 <div class="top-ocorrencias" id="topOcorrencias"></div>
 
 <div id="map"></div>
 
+<!-- Tabela original -->
 <table>
 <thead>
 <tr>
-<th>Data</th><th>Estado</th><th>Distrito</th><th>Concelho</th>
-<th>Natureza</th><th>Operacionais</th>
-<th>Terrestres</th><th>Aéreos</th>
+<th>Data Criação</th>
+<th>Estado</th>
+<th>Distrito</th>
+<th>Concelho</th>
+<th>Freguesia</th>
+<th>Natureza</th>
+<th>Localidade</th>
+<th>Operacionais</th>
+<th>Meios Terrestres</th>
+<th>Meios Aéreos</th>
 </tr>
 </thead>
 <tbody id="tabelaBody"></tbody>
@@ -172,7 +173,7 @@ if(p<1)requestAnimationFrame(step);}
 requestAnimationFrame(step);
 }
 
-function updateCard(id,newVal,oldVal,key){
+function updateCard(id,newVal,oldVal){
 animateCounter(id,oldVal,newVal);
 const card=document.getElementById(id).closest(".card");
 if(newVal>oldVal){card.classList.add("glow");setTimeout(()=>card.classList.remove("glow"),1500);}
@@ -184,11 +185,12 @@ document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
 document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
 }
 
+// Render Top 3 ocorrências
 function renderTopOcorrencias(data){
   const container = document.getElementById("topOcorrencias");
   container.innerHTML="";
-  const top4 = [...data].sort((a,b)=> (b.properties.Operacionais||0) - (a.properties.Operacionais||0)).slice(0,4);
-  top4.forEach(f=>{
+  const top3 = [...data].sort((a,b)=> (b.properties.Operacionais||0) - (a.properties.Operacionais||0)).slice(0,3);
+  top3.forEach(f=>{
     const p=f.properties;
     const distrito = getDistrito(p.Concelho);
     const borderColor = p.EstadoOcorrencia==="Em Curso" ? "red" :
@@ -209,6 +211,7 @@ function renderTopOcorrencias(data){
   });
 }
 
+// Render principal
 function render(data){
   markers.clearLayers();
 
@@ -234,28 +237,20 @@ function render(data){
   previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
 
-  // Tabela e Mapa
+  // Tabela
   const tbody=document.getElementById("tabelaBody");
   tbody.innerHTML="";
   data.forEach(f=>{
     const p=f.properties;
     let tr=document.createElement("tr");
-    let classe="";
-    switch(p.EstadoOcorrencia){
-      case "Despacho de 1º Alerta": classe="despacho1"; break;
-      case "Em Curso": classe="emcurso"; break;
-      case "Em Resolução": classe="resolucao"; break;
-      case "Em Conclusão": classe="conclusao"; break;
-      case "Chegada ao TO": classe="chegada"; break;
-      case "Vigilância": classe="vigilancia"; break;
-    }
-    tr.className=classe;
     tr.innerHTML=`
       <td>${p.DataInicioOcorrencia||""}</td>
       <td>${p.EstadoOcorrencia||""}</td>
       <td>${getDistrito(p.Concelho)}</td>
       <td>${p.Concelho||""}</td>
+      <td>${p.Freguesia||""}</td>
       <td>${p.Natureza||""}</td>
+      <td>${p.Localidade||""}</td>
       <td>${p.Operacionais||0}</td>
       <td>${p.MeiosTerrestres||0}</td>
       <td>${p.MeiosAereos||0}</td>
@@ -279,6 +274,10 @@ function render(data){
   renderTopOcorrencias(data);
 }
 
+// Atualizar hora topo
+setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
+
+// Carregar dados
 function load(){
   fetch(API_URL).then(r=>r.json()).then(d=>{
     allData=d.features;
@@ -286,8 +285,6 @@ function load(){
     document.getElementById("lastUpdate").textContent="Atualizado: "+new Date().toLocaleString("pt-PT");
   });
 }
-
-setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
 load();
 setInterval(load,120000);
 </script>
