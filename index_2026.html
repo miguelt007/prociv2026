@@ -1,31 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-  <title>Mapa de Ocorrências</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+<meta charset="UTF-8" />
+<title>Ocorrências Ativas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 350px;
+  background: #111;
+  color: white;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+#sidebar h2 {
+  margin-top: 0;
+  color: #ff3c3c;
+}
+
+.ocorrencia {
+  border-bottom: 1px solid #333;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.ocorrencia:hover {
+  background: #222;
+}
+
+#map {
+  flex: 1;
+}
+
+.filter {
+  margin-bottom: 10px;
+}
+
+select {
+  width: 100%;
+  padding: 5px;
+}
+.legend {
+  margin-top: 15px;
+  font-size: 14px;
+}
+.legend div {
+  margin-bottom: 5px;
+}
+.dot {
+  height: 12px;
+  width: 12px;
+  display: inline-block;
+  margin-right: 5px;
+  border-radius: 50%;
+}
+.red { background: red; }
+.green { background: green; }
+.orange { background: orange; }
+</style>
 </head>
+
 <body>
-  <div id="map" style="height: 100vh;"></div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([39.5, -8], 7);
+<div id="sidebar">
+  <h2>🔥 Ocorrências</h2>
 
-    L.tileLayer(
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    ).addTo(map);
+  <div class="filter">
+    <label>Filtrar por Estado:</label>
+    <select id="estadoFilter">
+      <option value="todos">Todos</option>
+    </select>
+  </div>
 
-    fetch(
-      'https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*'
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        L.geoJSON(data).addTo(map);
-      });
-  </script>
+  <div id="lista"></div>
+
+  <div class="legend">
+    <strong>Legenda:</strong>
+    <div><span class="dot red"></span>Ativo</div>
+    <div><span class="dot orange"></span>Em Curso</div>
+    <div><span class="dot green"></span>Encerrado</div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+const apiURL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+
+const map = L.map('map').setView([39.5, -8], 7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+  .addTo(map);
+
+let markersLayer = L.layerGroup().addTo(map);
+let allData = [];
+
+function getColor(estado) {
+  if (!estado) return "blue";
+  estado = estado.toLowerCase();
+  if (estado.includes("ativo")) return "red";
+  if (estado.includes("curso")) return "orange";
+  if (estado.includes("encerr")) return "green";
+  return "blue";
+}
+
+function loadData() {
+  fetch(apiURL)
+    .then(res => res.json())
+    .then(data => {
+      allData = data.features;
+      render(allData);
+      populateEstados();
+    });
+}
+
+function render(data) {
+  markersLayer.clearLayers();
+  document.getElementById("lista").innerHTML = "";
+
+  data.forEach(feature => {
+    const props = feature.properties;
+    const coords = feature.geometry.coordinates;
+
+    const marker = L.circleMarker(
+      [coords[1], coords[0]],
+      {
+        radius: 8,
+        color: getColor(props.Estado),
+        fillOpacity: 0.8
+      }
+    ).addTo(markersLayer);
+
+    marker.bindPopup(`
+      <b>${props.Natureza || ''}</b><br>
+      Estado: ${props.Estado || ''}<br>
+      Distrito: ${props.Distrito || ''}<br>
+      Concelho: ${props.Concelho || ''}<br>
+      Freguesia: ${props.Freguesia || ''}<br>
+      Localização: ${props.Localizacao || ''}<br>
+      Data Criação: ${props.DataCriacao || ''}<br>
+      Data Atualização: ${props.DataAtualizacao || ''}<br>
+      Operacionais: ${props.Operacionais || 0}<br>
+      Terrestres: ${props.Terrestres || 0}<br>
+      Aéreos: ${props.Aereos || 0}
+    `);
+
+    const item = document.createElement("div");
+    item.className = "ocorrencia";
+    item.innerHTML = `
+      <strong>${props.Natureza || ''}</strong><br>
+      ${props.Concelho || ''} - ${props.Distrito || ''}<br>
+      Estado: ${props.Estado || ''}
+    `;
+
+    item.onclick = () => {
+      map.setView([coords[1], coords[0]], 12);
+      marker.openPopup();
+    };
+
+    document.getElementById("lista").appendChild(item);
+  });
+}
+
+function populateEstados() {
+  const estados = new Set(allData.map(f => f.properties.Estado));
+  const select = document.getElementById("estadoFilter");
+
+  estados.forEach(e => {
+    if (e) {
+      const option = document.createElement("option");
+      option.value = e;
+      option.textContent = e;
+      select.appendChild(option);
+    }
+  });
+}
+
+document.getElementById("estadoFilter").addEventListener("change", function() {
+  const value = this.value;
+  if (value === "todos") {
+    render(allData);
+  } else {
+    const filtered = allData.filter(f => f.properties.Estado === value);
+    render(filtered);
+  }
+});
+
+loadData();
+
+// Atualiza automaticamente a cada 2 minutos
+setInterval(loadData, 120000);
+
+</script>
 
 </body>
 </html>
