@@ -40,11 +40,22 @@ footer .text { color:#ffcc00; font-size:0.9em; }
 
 table { width:95%; margin:10px auto 20px; border-collapse:collapse; background:white;}
 th,td{ padding:8px; border-bottom:1px solid #ddd;}
-th{background:#111;color:white;}
-tr.yellow{background:#FFD700;color:#000;}
-tr.red{background:red;color:#fff;}
-tr.blue{background:blue;color:#fff;}
-tr.green{background:green;color:#fff;}
+th{background:#111;color:white; text-align:left;}
+td { vertical-align: middle; }
+
+/* Badge para o estado */
+.estado-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size:0.9em;
+  display:inline-block;
+  color:white;
+}
+.estado-despacho { background:#FFD700; color:#000; }
+.estado-curso { background:red; }
+.estado-resolucao { background:blue; }
+.estado-conclusao { background:green; }
 
 /* Ícone pulsante mapa */
 .blinking-icon circle{animation:pulse 1s infinite;}
@@ -134,10 +145,10 @@ function getDistrito(nome){
 
 function getEstadoClass(estado){
   switch(estado){
-    case "Despacho de 1º Alerta": return "yellow";
-    case "Em Curso": return "red";
-    case "Em Resolução": return "blue";
-    case "Em Conclusão": return "green";
+    case "Despacho de 1º Alerta": return "estado-despacho";
+    case "Em Curso": return "estado-curso";
+    case "Em Resolução": return "estado-resolucao";
+    case "Em Conclusão": return "estado-conclusao";
     default: return "";
   }
 }
@@ -189,9 +200,9 @@ function renderTable(data){
   data.forEach(f=>{
     const p=f.properties;
     const tr=document.createElement("tr");
-    tr.className=getEstadoClass(p.EstadoOcorrencia);
+    const estadoClass=getEstadoClass(p.EstadoOcorrencia);
     tr.innerHTML=`<td>${p.DataInicioOcorrencia||""}</td>
-<td>${p.EstadoOcorrencia||""}</td>
+<td><span class="estado-badge ${estadoClass}">${p.EstadoOcorrencia||""}</span></td>
 <td>${getDistrito(p.Concelho)}</td>
 <td>${p.Concelho||""}</td>
 <td>${p.Natureza||""}</td>
