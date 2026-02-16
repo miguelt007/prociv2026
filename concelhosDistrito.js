@@ -66,7 +66,7 @@ const concelhosDistrito = [
   { municipio:"Cascais", distrito:"Lisboa" },
   { municipio:"Castanheira de Pêra", distrito:"Leiria" },
   { municipio:"Chamusca", distrito:"Santarém" },
-  { municipio:"Castanheira de Pera", distrito:"Leiria" },
+  { municipio:"Castanheira de Pêra", distrito:"Leiria" },
   { municipio:"Castelo Branco", distrito:"Castelo Branco" },
   { municipio:"Castro Daire", distrito:"Viseu" },
   { municipio:"Castro Marim", distrito:"Faro" },
