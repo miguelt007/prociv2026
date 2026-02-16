@@ -41,7 +41,14 @@ table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; backgro
 th,td{ padding:8px; border-bottom:1px solid #ddd; text-align:left;}
 th{background:#111;color:white;}
 
-footer { text-align:center; padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:center; align-items:center; }
+/* Cores apenas no texto do Estado */
+td.estado { font-weight:bold; }
+td.estado.despacho1 { color: #FFD700; }
+td.estado.emcurso { color: red; }
+td.estado.resolucao { color: blue; }
+td.estado.conclusao { color: green; }
+td.estado.chegada { color: orange; }
+td.estado.vigilancia { color: gray; }
 
 .top-ocorrencias {
   display:flex;
@@ -92,6 +99,9 @@ footer { text-align:center; padding:10px; background:#111; color:#ffcc00; displa
 
 .pop{animation:popIcon 2s infinite;}
 @keyframes popIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+
+footer { text-align:center; padding:10px; background:#111; color:#ffcc00; }
+footer div { display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto; }
 </style>
 </head>
 
@@ -123,12 +133,10 @@ footer { text-align:center; padding:10px; background:#111; color:#ffcc00; displa
 <select id="filterNatureza"><option value="">Todas Naturezas</option></select>
 </div>
 
-<!-- Top 3 ocorrências -->
 <div class="top-ocorrencias" id="topOcorrencias"></div>
 
 <div id="map"></div>
 
-<!-- Tabela original -->
 <table>
 <thead>
 <tr>
@@ -147,7 +155,11 @@ footer { text-align:center; padding:10px; background:#111; color:#ffcc00; displa
 <tbody id="tabelaBody"></tbody>
 </table>
 
-<footer>Fonte de dados: ANEPC</footer>
+<footer>
+  <div>
+    <div>Fonte de dados: ANEPC</div>
+  </div>
+</footer>
 
 <script>
 const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
@@ -243,9 +255,21 @@ function render(data){
   data.forEach(f=>{
     const p=f.properties;
     let tr=document.createElement("tr");
+
+    // Classe do Estado
+    let estadoClasse="";
+    switch(p.EstadoOcorrencia){
+      case "Despacho de 1º Alerta": estadoClasse="despacho1"; break;
+      case "Em Curso": estadoClasse="emcurso"; break;
+      case "Em Resolução": estadoClasse="resolucao"; break;
+      case "Em Conclusão": estadoClasse="conclusao"; break;
+      case "Chegada ao TO": estadoClasse="chegada"; break;
+      case "Vigilância": estadoClasse="vigilancia"; break;
+    }
+
     tr.innerHTML=`
       <td>${p.DataInicioOcorrencia||""}</td>
-      <td>${p.EstadoOcorrencia||""}</td>
+      <td class="estado ${estadoClasse}">${p.EstadoOcorrencia||""}</td>
       <td>${getDistrito(p.Concelho)}</td>
       <td>${p.Concelho||""}</td>
       <td>${p.Freguesia||""}</td>
