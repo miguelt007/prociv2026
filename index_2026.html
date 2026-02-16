@@ -119,13 +119,11 @@ let markers=L.markerClusterGroup();map.addLayer(markers);
 let allData=[];
 let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
-// Função para obter distrito
 function getDistrito(nome){
   const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
   return e?e.distrito:"Desconhecido";
 }
 
-// Cores por estado
 function getEstadoClass(estado){
   switch(estado){
     case "Despacho de 1º Alerta": return "yellow";
@@ -157,11 +155,46 @@ function toggleAnimations(curso,alerta,aereos){
   document.querySelector(".fa-helicopter").style.animation=aereos>0?"rotate-slow":"none";
 }
 
-// Renderiza tabela e mapa
-function render(data){
+function renderMap(data){
   markers.clearLayers();
+  data.forEach(f=>{
+    if(!f.geometry) return;
+    const [lng,lat]=f.geometry.coordinates;
+    const p=f.properties;
+    let layer;
+    if(p.EstadoOcorrencia==="Em Curso"){
+      const icon=L.divIcon({className:'blinking-icon',
+        html:`<svg width="30" height="30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
+        iconSize:[30,30],iconAnchor:[15,15]});
+      layer=L.marker([lat,lng],{icon});
+    }else{
+      layer=L.circleMarker([lat,lat],{radius:8,color:"blue",fillOpacity:0.9});
+      layer=L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9});
+    }
+    layer.bindPopup(`<b>${p.Natureza||""}</b><br>Estado: ${p.EstadoOcorrencia||""}<br>Distrito: ${getDistrito(p.Concelho)}<br>Concelho: ${p.Concelho||""}<br>Operacionais:${p.Operacionais||0}<br>Terrestres:${p.MeiosTerrestres||0}<br>Aéreos:${p.MeiosAereos||0}`);
+    markers.addLayer(layer);
+  });
+}
 
-  // Dashboard
+function renderTable(data){
+  const tbody=document.getElementById("tabelaBody");
+  tbody.innerHTML="";
+  data.forEach(f=>{
+    const p=f.properties;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${p.DataInicioOcorrencia||""}</td>
+<td class="${getEstadoClass(p.EstadoOcorrencia)}">${p.EstadoOcorrencia||""}</td>
+<td>${getDistrito(p.Concelho)}</td>
+<td>${p.Concelho||""}</td>
+<td>${p.Natureza||""}</td>
+<td>${p.Operacionais||0}</td>
+<td>${p.MeiosTerrestres||0}</td>
+<td>${p.MeiosAereos||0}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDashboard(data){
   const total=data.length;
   const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
   const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
@@ -182,57 +215,15 @@ function render(data){
 
   previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
-
-  // Preencher filtros dinamicamente
-  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia))];
-  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)))];
-  const concelhos=[...new Set(data.map(d=>d.properties.Concelho))];
-  const naturezas=[...new Set(data.map(d=>d.properties.Natureza))];
-
-  const fEstado=document.getElementById("filterEstado");
-  fEstado.innerHTML=`<option value="">Todos Estados</option>`+estados.map(e=>`<option value="${e}">${e}</option>`).join('');
-  const fDistrito=document.getElementById("filterDistrito");
-  fDistrito.innerHTML=`<option value="">Todos Distritos</option>`+distritos.map(d=>`<option value="${d}">${d}</option>`).join('');
-  const fConcelho=document.getElementById("filterConcelho");
-  fConcelho.innerHTML=`<option value="">Todos Concelhos</option>`+concelhos.map(c=>`<option value="${c}">${c}</option>`).join('');
-  const fNatureza=document.getElementById("filterNatureza");
-  fNatureza.innerHTML=`<option value="">Todas Naturezas</option>`+naturezas.map(n=>`<option value="${n}">${n}</option>`).join('');
-
-  // Tabela
-  const tbody=document.getElementById("tabelaBody");
-  tbody.innerHTML="";
-  data.forEach(f=>{
-    const p=f.properties;
-    const tr=document.createElement("tr");
-    const estadoClass=getEstadoClass(p.EstadoOcorrencia);
-    tr.innerHTML=`
-      <td>${p.DataInicioOcorrencia||""}</td>
-      <td class="${estadoClass}">${p.EstadoOcorrencia||""}</td>
-      <td>${getDistrito(p.Concelho)}</td>
-      <td>${p.Concelho||""}</td>
-      <td>${p.Natureza||""}</td>
-      <td>${p.Operacionais||0}</td>
-      <td>${p.MeiosTerrestres||0}</td>
-      <td>${p.MeiosAereos||0}</td>
-    `;
-    tbody.appendChild(tr);
-
-    if(f.geometry){
-      const [lng,lat]=f.geometry.coordinates;
-      if(p.EstadoOcorrencia==="Em Curso"){
-        const icon=L.divIcon({className:'blinking-icon',
-          html:`<svg width="30" height="30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
-          iconSize:[30,30],iconAnchor:[15,15]});
-        L.marker([lat,lng],{icon}).addTo(markers);
-      }else{
-        L.circleMarker([lat,lng],{radius:8,color:"blue",fillOpacity:0.9}).addTo(markers);
-      }
-    }
-  });
-  map.addLayer(markers);
 }
 
-// Filtra dados conforme seleção
+function render(data){
+  renderDashboard(data);
+  renderTable(data);
+  renderMap(data);
+  populateFilters(data);
+}
+
 function applyFilters(){
   const estado=document.getElementById("filterEstado").value;
   const distrito=document.getElementById("filterDistrito").value;
@@ -246,6 +237,23 @@ function applyFilters(){
            (!natureza || d.properties.Natureza===natureza);
   });
   render(filtered);
+}
+
+// Preenche filtros
+function populateFilters(data){
+  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia))];
+  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)))];
+  const concelhos=[...new Set(data.map(d=>d.properties.Concelho))];
+  const naturezas=[...new Set(data.map(d=>d.properties.Natureza))];
+
+  const fEstado=document.getElementById("filterEstado");
+  fEstado.innerHTML=`<option value="">Todos Estados</option>`+estados.map(e=>`<option value="${e}">${e}</option>`).join('');
+  const fDistrito=document.getElementById("filterDistrito");
+  fDistrito.innerHTML=`<option value="">Todos Distritos</option>`+distritos.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const fConcelho=document.getElementById("filterConcelho");
+  fConcelho.innerHTML=`<option value="">Todos Concelhos</option>`+concelhos.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const fNatureza=document.getElementById("filterNatureza");
+  fNatureza.innerHTML=`<option value="">Todas Naturezas</option>`+naturezas.map(n=>`<option value="${n}">${n}</option>`).join('');
 }
 
 // Carregar API
@@ -267,7 +275,7 @@ document.getElementById("filterEstado").addEventListener("change",applyFilters);
 document.getElementById("filterDistrito").addEventListener("change",applyFilters);
 document.getElementById("filterConcelho").addEventListener("change",applyFilters);
 document.getElementById("filterNatureza").addEventListener("change",applyFilters);
-
 </script>
+
 </body>
 </html>
