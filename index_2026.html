@@ -20,16 +20,7 @@ header .last-update { font-size:0.9em; color:#fff; }
 /* Cards container */
 .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px; }
 /* Cartões */
-.card {
-  width:18%;
-  min-width:150px;
-  color:white;
-  padding:15px 10px;
-  border-radius:8px;
-  text-align:center;
-  box-shadow:0 3px 6px rgba(0,0,0,0.2);
-  transition: transform 0.2s;
-}
+.card { width:18%; min-width:150px; color:white; padding:15px 10px; border-radius:8px; text-align:center; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition: transform 0.2s; }
 .card:hover { transform: translateY(-3px); }
 .card h2 { margin:5px 0 0; font-size:1.8em; }
 
@@ -92,7 +83,6 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
   <thead>
     <tr>
       <th>Data Criação</th>
-      <th>Data Atualização</th>
       <th>Estado</th>
       <th>Distrito</th>
       <th>Concelho</th>
@@ -173,8 +163,7 @@ function renderMap(data){
       Concelho: ${p.Concelho||''}<br>
       Freguesia: ${p.Freguesia||''}<br>
       Localização: ${p.Localizacao||''}<br>
-      Data Criação: ${p.DataCriacao||''}<br>
-      Data Atualização: ${p.DataAtualizacao||''}<br>
+      Data Criação: ${p.DataInicioOcorrencia||''}<br>
       Operacionais: ${p.Operacionais||0}<br>
       Meios Terrestres: ${p.MeiosTerrestres||0}<br>
       Meios Aéreos: ${p.MeiosAereos||0}
@@ -193,7 +182,6 @@ function renderTabela(data){
     const p=f.properties;
     const tr = document.createElement("tr");
 
-    // Classe por estado
     let classe="";
     switch(p.EstadoOcorrencia){
       case "Despacho de 1º Alerta": classe="despacho1"; break;
@@ -205,8 +193,7 @@ function renderTabela(data){
     tr.className = classe;
 
     tr.innerHTML = `
-      <td>${p.DataCriacao||''}</td>
-      <td>${p.DataAtualizacao||''}</td>
+      <td>${p.DataInicioOcorrencia||''}</td>
       <td>${p.EstadoOcorrencia||''}</td>
       <td>${p.Distrito||''}</td>
       <td>${p.Concelho||''}</td>
