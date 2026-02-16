@@ -309,5 +309,4 @@ const concelhosDistrito = [
   { municipio:"Calheta das Flores", distrito:"Açores" },
   { municipio:"Lajes das Flores", distrito:"Açores" },
   { municipio:"Corvo", distrito:"Açores" }
-);
 ];
