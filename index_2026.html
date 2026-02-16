@@ -62,14 +62,17 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
 
 <!-- Cartões -->
 <div class="cards">
+  <!-- Linha 1: cartões cinza -->
   <div class="card gray" title=""><strong>Total Ocorrências</strong><br><h2 id="totalCount">0</h2></div>
+  <div class="card gray" title=""><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
+  <div class="card gray" title=""><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
+  <div class="card gray" title=""><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
+
+  <!-- Linha 2: cartões coloridos por estado -->
   <div class="card yellow" title=""><strong>Despacho de 1º Alerta</strong><br><h2 id="alertCount">0</h2></div>
   <div class="card red" title=""><strong>Em Curso</strong><br><h2 id="cursoCount">0</h2></div>
   <div class="card blue" title=""><strong>Em Resolução</strong><br><h2 id="resolucaoCount">0</h2></div>
   <div class="card green" title=""><strong>Em Conclusão</strong><br><h2 id="conclusaoCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
 </div>
 
 <!-- Mapa -->
@@ -141,7 +144,7 @@ function renderDashboard(data){
   document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosTerrestres||0),0);
   document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
 
-  // Atualizar tooltips com número de ocorrências por distrito para cada cartão de estado
+  // Tooltips por distrito para cartões de estado
   const estados = ["Despacho de 1º Alerta","Em Curso","Em Resolução","Em Conclusão"];
   estados.forEach(estado=>{
     const distritoCount = {};
