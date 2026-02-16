@@ -12,9 +12,10 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; }
-header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; }
+body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
+header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
 header h1 { margin:0; font-size:1.5em; }
+header .time { font-size:0.9em; color:#fff; margin-right:15px; }
 header .last-update { font-size:0.9em; color:#fff; }
 
 /* Cards container */
@@ -47,6 +48,9 @@ tr.emcurso { background:red; color:#fff; }         /* Em Curso */
 tr.resolucao { background:blue; color:#fff; }      /* Em Resolução */
 tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
 
+/* Footer */
+footer { text-align:center; padding:10px; font-size:0.9em; color:#555; margin-top:auto; }
+
 /* Responsivo */
 @media(max-width:1200px){ .card { width:22%; } }
 @media(max-width:900px){ .card { width:45%; } }
@@ -57,7 +61,10 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
 
 <header>
   <h1>PROCIV 2026</h1>
-  <div class="last-update" id="lastUpdate">Atualizado: --/--/---- --:--:--</div>
+  <div style="display:flex; align-items:center; flex-wrap:wrap;">
+    <div class="time" id="currentTime">--:--:--</div>
+    <div class="last-update" id="lastUpdate">Atualizado: --/--/---- --:--:--</div>
+  </div>
 </header>
 
 <!-- Cartões -->
@@ -97,6 +104,8 @@ tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
   <tbody></tbody>
 </table>
 
+<footer>Fonte de dados: ANEPC</footer>
+
 <script>
 const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
@@ -117,7 +126,14 @@ function getColor(estado){
   return "blue";
 }
 
-function atualizarHora(){
+// Atualiza hora em tempo real
+function atualizarHoraAtual(){
+  const now = new Date();
+  document.getElementById("currentTime").textContent = now.toLocaleTimeString('pt-PT');
+}
+
+// Atualiza hora da última atualização
+function atualizarHoraAtualizacao(){
   const now = new Date();
   document.getElementById("lastUpdate").textContent = "Atualizado: " + now.toLocaleString('pt-PT');
 }
@@ -127,7 +143,7 @@ function loadData(){
   .then(res=>res.json())
   .then(data=>{
     allData = data.features;
-    atualizarHora();
+    atualizarHoraAtualizacao();
     renderDashboard(allData);
     renderMap(allData);
     renderTabela(allData);
@@ -223,6 +239,8 @@ function renderTabela(data){
   });
 }
 
+// Atualiza hora do topo a cada segundo
+setInterval(atualizarHoraAtual,1000);
 loadData();
 setInterval(loadData,120000);
 </script>
