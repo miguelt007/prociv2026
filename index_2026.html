@@ -15,12 +15,11 @@
 <script src="concelhosDistrito.js"></script>
 
 <style>
-* { box-sizing:border-box; }
+body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh; }
 
-body { margin:0; font-family:Arial; background:#f4f4f4; display:flex; flex-direction:column; min-height:100vh;}
-.container { width:95%; max-width:1400px; margin:0 auto; }
+.wrapper { width:95%; max-width:1400px; margin:0 auto; display:flex; flex-direction:column; }
 
-header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; width:100%; margin:0; }
+header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
 
 .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:10px 0; }
 .card { width:18%; min-width:160px; padding:15px; border-radius:8px; text-align:center; color:white; box-shadow:0 3px 6px rgba(0,0,0,0.2); transition:0.3s; }
@@ -33,7 +32,7 @@ header, footer { padding:15px; background:#111; color:#ffcc00; display:flex; jus
 
 #map { height:400px; margin:10px 0; border-radius:6px; }
 
-table { width:100%; margin:10px 0 20px 0; border-collapse:collapse; background:white; }
+table { width:100%; border-collapse:collapse; background:white; }
 th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
 th { background:#111; color:white; }
 
@@ -72,7 +71,8 @@ th { background:#111; color:white; }
 </head>
 
 <body>
-<div class="container">
+<div class="wrapper">
+
 <header>
 <h1>PROCIV 2026</h1>
 <div>
