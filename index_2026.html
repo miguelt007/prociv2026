@@ -17,6 +17,7 @@ header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-con
 header h1 { margin:0; font-size:1.5em; }
 header .last-update { font-size:0.9em; color:#fff; }
 
+/* Cards container */
 .cards {
   display: flex;
   flex-wrap: wrap;
@@ -24,35 +25,43 @@ header .last-update { font-size:0.9em; color:#fff; }
   gap: 10px;
   padding: 10px;
 }
+
+/* Cartões */
 .card {
-  flex: 1 1 180px;
-  max-width: 220px;
+  width: 18%;           /* desktop grande */
+  min-width: 150px;
   color: white;
-  padding: 15px 20px;
+  padding: 15px 10px;
   border-radius: 8px;
   text-align: center;
   box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
 }
+.card:hover { transform: translateY(-3px); }
 .card h2 { margin: 5px 0 0; font-size: 1.8em; }
-.yellow { background:#FFD700; color:#000; }
-.orange { background:orange; }
-.red { background:red; }
-.blue { background:blue; }
-.green { background:green; }
-.gray { background:#333; }
 
+/* Cores dos estados */
+.yellow { background:#FFD700; color:#000; }  /* Despacho 1º Alerta */
+.orange { background:orange; }              /* Despacho */
+.red { background:red; }                     /* Em Curso */
+.blue { background:blue; }                   /* Em Resolução */
+.green { background:green; }                 /* Em Conclusão */
+.gray { background:#333; }                   /* Total Ocorrências e totais gerais */
+
+/* Map */
 #map { height:400px; margin:10px; border-radius:6px; }
 
+/* Tabela */
 table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; background:white; border-radius:6px; overflow:hidden; }
 th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
 th { background:#111; color:white; }
 tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
-@media(max-width:900px){
-  .cards { flex-direction: row; justify-content: center; }
-  .card { flex: 1 1 140px; max-width: 180px; }
-}
+/* Responsivo */
+@media(max-width:1200px){ .card { width: 22%; } }
+@media(max-width:900px){ .card { width: 45%; } }
+@media(max-width:600px){ .cards { flex-direction: column; align-items: center; } .card { width: 90%; } }
 </style>
 </head>
 <body>
@@ -62,25 +71,23 @@ tr:hover { background:#eee; }
   <div class="last-update" id="lastUpdate">Atualizado: --/--/---- --:--:--</div>
 </header>
 
+<!-- Cartões -->
 <div class="cards">
-  <!-- Total Ocorrências -->
   <div class="card gray">Total Ocorrências<br><h2 id="totalCount">0</h2></div>
-
-  <!-- Cartões de Estado -->
   <div class="card yellow">Despacho de 1º Alerta<br><h2 id="alertCount">0</h2></div>
   <div class="card red">Em Curso<br><h2 id="cursoCount">0</h2></div>
   <div class="card orange">Despacho<br><h2 id="despachoCount">0</h2></div>
   <div class="card blue">Em Resolução<br><h2 id="resolucaoCount">0</h2></div>
   <div class="card green">Em Conclusão<br><h2 id="conclusaoCount">0</h2></div>
-
-  <!-- Cartões de totais -->
   <div class="card gray">Total Operacionais<br><h2 id="operacionaisCount">0</h2></div>
   <div class="card gray">Total Meios Terrestres<br><h2 id="terrestresCount">0</h2></div>
   <div class="card gray">Total Meios Aéreos<br><h2 id="aereosCount">0</h2></div>
 </div>
 
+<!-- Mapa -->
 <div id="map"></div>
 
+<!-- Tabela -->
 <table id="tabelaOcorrencias">
   <thead>
     <tr>
@@ -139,17 +146,12 @@ function loadData(){
 }
 
 function renderDashboard(data){
-  // Total Ocorrências
   document.getElementById("totalCount").textContent = data.length;
-
-  // Cartões de Estado
   document.getElementById("alertCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
   document.getElementById("cursoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
   document.getElementById("despachoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho").length;
   document.getElementById("resolucaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
   document.getElementById("conclusaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
-
-  // Cartões de totais
   document.getElementById("operacionaisCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Operacionais||0),0);
   document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosTerrestres||0),0);
   document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
