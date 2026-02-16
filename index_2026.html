@@ -119,9 +119,21 @@ let markers=L.markerClusterGroup();map.addLayer(markers);
 let allData=[];
 let previousValues={total:0,alerta:0,curso:0,resolucao:0,conclusao:0,operacionais:0,terrestres:0,aereos:0};
 
+// Função para obter distrito
 function getDistrito(nome){
   const e=concelhosDistrito.find(c=>c.municipio.toLowerCase()===nome?.toLowerCase());
   return e?e.distrito:"Desconhecido";
+}
+
+// Cores por estado
+function getEstadoClass(estado){
+  switch(estado){
+    case "Despacho de 1º Alerta": return "yellow";
+    case "Em Curso": return "red";
+    case "Em Resolução": return "blue";
+    case "Em Conclusão": return "green";
+    default: return "";
+  }
 }
 
 function animateCounter(id,start,end,duration=800){
@@ -145,19 +157,11 @@ function toggleAnimations(curso,alerta,aereos){
   document.querySelector(".fa-helicopter").style.animation=aereos>0?"rotate-slow":"none";
 }
 
-// Função que retorna a classe de cor para o estado
-function getEstadoClass(estado){
-  switch(estado){
-    case "Despacho de 1º Alerta": return "yellow";
-    case "Em Curso": return "red";
-    case "Em Resolução": return "blue";
-    case "Em Conclusão": return "green";
-    default: return "";
-  }
-}
-
+// Renderiza tabela e mapa
 function render(data){
   markers.clearLayers();
+
+  // Dashboard
   const total=data.length;
   const alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
   const curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
@@ -179,6 +183,22 @@ function render(data){
   previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
 
+  // Preencher filtros dinamicamente
+  const estados=[...new Set(data.map(d=>d.properties.EstadoOcorrencia))];
+  const distritos=[...new Set(data.map(d=>getDistrito(d.properties.Concelho)))];
+  const concelhos=[...new Set(data.map(d=>d.properties.Concelho))];
+  const naturezas=[...new Set(data.map(d=>d.properties.Natureza))];
+
+  const fEstado=document.getElementById("filterEstado");
+  fEstado.innerHTML=`<option value="">Todos Estados</option>`+estados.map(e=>`<option value="${e}">${e}</option>`).join('');
+  const fDistrito=document.getElementById("filterDistrito");
+  fDistrito.innerHTML=`<option value="">Todos Distritos</option>`+distritos.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const fConcelho=document.getElementById("filterConcelho");
+  fConcelho.innerHTML=`<option value="">Todos Concelhos</option>`+concelhos.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const fNatureza=document.getElementById("filterNatureza");
+  fNatureza.innerHTML=`<option value="">Todas Naturezas</option>`+naturezas.map(n=>`<option value="${n}">${n}</option>`).join('');
+
+  // Tabela
   const tbody=document.getElementById("tabelaBody");
   tbody.innerHTML="";
   data.forEach(f=>{
@@ -209,8 +229,26 @@ function render(data){
       }
     }
   });
+  map.addLayer(markers);
 }
 
+// Filtra dados conforme seleção
+function applyFilters(){
+  const estado=document.getElementById("filterEstado").value;
+  const distrito=document.getElementById("filterDistrito").value;
+  const concelho=document.getElementById("filterConcelho").value;
+  const natureza=document.getElementById("filterNatureza").value;
+
+  const filtered=allData.filter(d=>{
+    return (!estado || d.properties.EstadoOcorrencia===estado) &&
+           (!distrito || getDistrito(d.properties.Concelho)===distrito) &&
+           (!concelho || d.properties.Concelho===concelho) &&
+           (!natureza || d.properties.Natureza===natureza);
+  });
+  render(filtered);
+}
+
+// Carregar API
 function load(){
   fetch(API_URL).then(r=>r.json()).then(d=>{
     allData=d.features;
@@ -219,10 +257,17 @@ function load(){
   });
 }
 
+// Atualiza hora
 setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
 load();
 setInterval(load,120000);
-</script>
 
+// Eventos filtros
+document.getElementById("filterEstado").addEventListener("change",applyFilters);
+document.getElementById("filterDistrito").addEventListener("change",applyFilters);
+document.getElementById("filterConcelho").addEventListener("change",applyFilters);
+document.getElementById("filterNatureza").addEventListener("change",applyFilters);
+
+</script>
 </body>
 </html>
