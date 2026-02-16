@@ -43,13 +43,13 @@ tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
 /* Cores por estado na tabela */
-tr.despacho1 { background:#FFD700; color:#000; }   /* Despacho 1º Alerta */
-tr.emcurso { background:red; color:#fff; }         /* Em Curso */
-tr.resolucao { background:blue; color:#fff; }      /* Em Resolução */
-tr.conclusao { background:green; color:#fff; }     /* Em Conclusão */
+tr.despacho1 { background:#FFD700; color:#000; }   
+tr.emcurso { background:red; color:#fff; }         
+tr.resolucao { background:blue; color:#fff; }      
+tr.conclusao { background:green; color:#fff; }     
 
 /* Footer */
-footer { text-align:center; padding:10px; font-size:0.9em; color:#555; background:#111; color:#ffcc00; }
+footer { text-align:center; padding:10px; font-size:0.9em; color:#ffcc00; background:#111; }
 
 /* Responsivo */
 @media(max-width:1200px){ .card { width:22%; } }
@@ -70,16 +70,16 @@ footer { text-align:center; padding:10px; font-size:0.9em; color:#555; backgroun
 <!-- Cartões -->
 <div class="cards">
   <!-- Linha 1: cartões cinza -->
-  <div class="card gray" title=""><strong>Total Ocorrências</strong><br><h2 id="totalCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
-  <div class="card gray" title=""><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
+  <div class="card gray"><strong>Total Ocorrências</strong><br><h2 id="totalCount">0</h2></div>
+  <div class="card gray"><strong>Total Operacionais</strong><br><h2 id="operacionaisCount">0</h2></div>
+  <div class="card gray"><strong>Total Meios Terrestres</strong><br><h2 id="terrestresCount">0</h2></div>
+  <div class="card gray"><strong>Total Meios Aéreos</strong><br><h2 id="aereosCount">0</h2></div>
 
   <!-- Linha 2: cartões coloridos por estado -->
-  <div class="card yellow" title=""><strong>Despacho de 1º Alerta</strong><br><h2 id="alertCount">0</h2></div>
-  <div class="card red" title=""><strong>Em Curso</strong><br><h2 id="cursoCount">0</h2></div>
-  <div class="card blue" title=""><strong>Em Resolução</strong><br><h2 id="resolucaoCount">0</h2></div>
-  <div class="card green" title=""><strong>Em Conclusão</strong><br><h2 id="conclusaoCount">0</h2></div>
+  <div class="card yellow"><strong>Despacho de 1º Alerta</strong><br><h2 id="alertCount">0</h2></div>
+  <div class="card red"><strong>Em Curso</strong><br><h2 id="cursoCount">0</h2></div>
+  <div class="card blue"><strong>Em Resolução</strong><br><h2 id="resolucaoCount">0</h2></div>
+  <div class="card green"><strong>Em Conclusão</strong><br><h2 id="conclusaoCount">0</h2></div>
 </div>
 
 <!-- Mapa -->
@@ -106,167 +106,110 @@ footer { text-align:center; padding:10px; font-size:0.9em; color:#555; backgroun
 
 <footer>Fonte de dados: ANEPC</footer>
 
-<script>
-const API_URL = "https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+<!-- JSON externo com concelhos + distrito -->
+<script src="concelhosDistrito.js"></script>
 
-let map = L.map('map').setView([39.5,-8],7);
+<script>
+const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
+
+let map=L.map('map').setView([39.5,-8],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-let markersLayer = L.markerClusterGroup();
+let markersLayer=L.markerClusterGroup();
 map.addLayer(markersLayer);
 
-let allData = [];
+let allData=[];
 
-// JSON completo dos concelhos com distrito
-const concelhosDistrito = [
-  { municipio: "Lisboa", distrito: "Lisboa" },
-  { municipio: "Porto", distrito: "Porto" },
-  { municipio: "Sintra", distrito: "Lisboa" },
-  { municipio: "Funchal", distrito: "Madeira" },
-  { municipio: "Ponta Delgada", distrito: "Açores" },
-  { municipio: "Angra do Heroísmo", distrito: "Açores" },
-  { municipio: "Cascais", distrito: "Lisboa" },
-  { municipio: "Braga", distrito: "Braga" },
-  { municipio: "Albufeira", distrito: "Faro" },
-  { municipio: "Coimbra", distrito: "Coimbra" },
-  // … aqui incluí todos os outros 308 concelhos como mostrado anteriormente
-];
-
-// Função para obter distrito pelo concelho
 function getDistritoPorConcelho(nomeConcelho){
-  const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase()===nomeConcelho.toLowerCase());
+  const entry = concelhosDistrito.find(c => c.municipio.toLowerCase() === nomeConcelho.toLowerCase());
   return entry ? entry.distrito : "Desconhecido";
 }
 
-function getColor(estado){
-  if(!estado) return "blue";
-  estado = estado.toLowerCase();
-  if(estado.includes("despacho de 1º alerta")) return "yellow";
-  if(estado.includes("em curso")) return "red";
-  if(estado.includes("em resolução")) return "blue";
-  if(estado.includes("em conclusão")) return "green";
-  return "blue";
-}
-
-// Atualiza hora em tempo real (com dia)
-function atualizarHoraAtual(){
+// Atualiza hora real no topo
+function updateClock(){
   const now = new Date();
-  const dia = now.toLocaleDateString('pt-PT');
-  const hora = now.toLocaleTimeString('pt-PT');
-  document.getElementById("currentTime").textContent = `${dia} ${hora}`;
+  const timeStr = now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT');
+  document.getElementById('currentTime').textContent = timeStr;
 }
+setInterval(updateClock,1000);
+updateClock();
 
-// Atualiza hora da última atualização
-function atualizarHoraAtualizacao(){
-  const now = new Date();
-  const datetime = now.toLocaleString('pt-PT');
-  document.getElementById("lastUpdate").textContent = "Atualizado: " + datetime;
-}
-
-function loadData(){
-  fetch(API_URL)
-  .then(res=>res.json())
-  .then(data=>{
+// Função para buscar dados da API e renderizar tudo
+async function fetchData(){
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
     allData = data.features;
-    atualizarHoraAtualizacao();
-    renderDashboard(allData);
-    renderMap(allData);
-    renderTabela(allData);
-  });
-}
 
-function renderDashboard(data){
-  document.getElementById("totalCount").textContent = data.length;
-  document.getElementById("alertCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
-  document.getElementById("cursoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
-  document.getElementById("resolucaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Resolução").length;
-  document.getElementById("conclusaoCount").textContent = data.filter(f=>f.properties.EstadoOcorrencia==="Em Conclusão").length;
-  document.getElementById("operacionaisCount").textContent = data.reduce((sum,f)=>sum + (f.properties.Operacionais||0),0);
-  document.getElementById("terrestresCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosTerrestres||0),0);
-  document.getElementById("aereosCount").textContent = data.reduce((sum,f)=>sum + (f.properties.MeiosAereos||0),0);
+    // Zera contadores
+    let total=0, operacionais=0, terrestres=0, aereos=0, alert=0, curso=0, resol=0, concl=0;
+    markersLayer.clearLayers();
+    const tbody = document.querySelector("#tabelaOcorrencias tbody");
+    tbody.innerHTML="";
 
-  // Tooltips por distrito para cartões de estado
-  const estados = ["Despacho de 1º Alerta","Em Curso","Em Resolução","Em Conclusão"];
-  estados.forEach(estado=>{
-    const distritoCount = {};
-    data.filter(f=>f.properties.EstadoOcorrencia===estado).forEach(f=>{
-      const dist = getDistritoPorConcelho(f.properties.Concelho||"Desconhecido");
-      distritoCount[dist] = (distritoCount[dist]||0)+1;
+    allData.forEach(f=>{
+      total++;
+      const props=f.properties;
+      operacionais += props.Operacionais || 0;
+      terrestres += props.MeiosTerrestres || 0;
+      aereos += props.MeiosAereos || 0;
+
+      const estado = props.EstadoOcorrencia;
+      if(estado==="Despacho de 1º Alerta") alert++;
+      else if(estado==="Em Curso") curso++;
+      else if(estado==="Em Resolução") resol++;
+      else if(estado==="Em Conclusão") concl++;
+
+      // Preenche tabela
+      const tr = document.createElement("tr");
+      if(estado==="Despacho de 1º Alerta") tr.className="despacho1";
+      else if(estado==="Em Curso") tr.className="emcurso";
+      else if(estado==="Em Resolução") tr.className="resolucao";
+      else if(estado==="Em Conclusão") tr.className="conclusao";
+
+      const distrito = getDistritoPorConcelho(props.Concelho || "");
+      tr.innerHTML = `
+        <td>${props.DataInicioOcorrencia || ""}</td>
+        <td>${estado || ""}</td>
+        <td>${distrito}</td>
+        <td>${props.Concelho || ""}</td>
+        <td>${props.Freguesia || ""}</td>
+        <td>${props.Natureza || ""}</td>
+        <td>${props.Localidade || ""}</td>
+        <td>${props.Operacionais || 0}</td>
+        <td>${props.MeiosTerrestres || 0}</td>
+        <td>${props.MeiosAereos || 0}</td>
+      `;
+      tbody.appendChild(tr);
+
+      // Adiciona marcador no mapa
+      if(f.geometry && f.geometry.coordinates){
+        const [lon,lat] = f.geometry.coordinates;
+        const marker = L.marker([lat,lon]).bindPopup(`<b>${props.Natureza}</b><br>${props.Concelho} - ${props.Freguesia}`);
+        markersLayer.addLayer(marker);
+      }
     });
-    let tooltipText = Object.entries(distritoCount).map(([d,c])=>`${d}: ${c}`).join('\n');
-    const cardId = {
-      "Despacho de 1º Alerta":"alertCount",
-      "Em Curso":"cursoCount",
-      "Em Resolução":"resolucaoCount",
-      "Em Conclusão":"conclusaoCount"
-    }[estado];
-    document.getElementById(cardId).parentElement.title = tooltipText;
-  });
+
+    // Atualiza cartões
+    document.getElementById("totalCount").textContent = total;
+    document.getElementById("operacionaisCount").textContent = operacionais;
+    document.getElementById("terrestresCount").textContent = terrestres;
+    document.getElementById("aereosCount").textContent = aereos;
+    document.getElementById("alertCount").textContent = alert;
+    document.getElementById("cursoCount").textContent = curso;
+    document.getElementById("resolucaoCount").textContent = resol;
+    document.getElementById("conclusaoCount").textContent = concl;
+
+    // Atualiza hora da última atualização
+    const now = new Date();
+    document.getElementById("lastUpdate").textContent = "Atualizado: " + now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT');
+
+  }catch(err){
+    console.error(err);
+  }
 }
 
-function renderMap(data){
-  markersLayer.clearLayers();
-  data.forEach(f=>{
-    const p = f.properties;
-    const [lng,lat] = f.geometry.coordinates;
-    const marker = L.circleMarker([lat,lng],{
-      radius:8,
-      color:getColor(p.EstadoOcorrencia),
-      fillOpacity:0.9
-    }).bindPopup(`
-      <b>${p.Natureza||''}</b><br>
-      Estado: ${p.EstadoOcorrencia||''}<br>
-      Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
-      Concelho: ${p.Concelho||''}<br>
-      Freguesia: ${p.Freguesia||''}<br>
-      Localidade: ${p.Localidade||''}<br>
-      Data Criação: ${p.DataInicioOcorrencia||''}<br>
-      Operacionais: ${p.Operacionais||0}<br>
-      Meios Terrestres: ${p.MeiosTerrestres||0}<br>
-      Meios Aéreos: ${p.MeiosAereos||0}
-    `);
-    markersLayer.addLayer(marker);
-  });
-}
-
-function renderTabela(data){
-  const tbody = document.querySelector("#tabelaOcorrencias tbody");
-  tbody.innerHTML = "";
-  const prioridade = ["Despacho de 1º Alerta","Em Curso","Em Resolução","Em Conclusão"];
-  const sorted = data.sort((a,b)=> prioridade.indexOf(a.properties.EstadoOcorrencia) - prioridade.indexOf(b.properties.EstadoOcorrencia));
-
-  sorted.forEach(f=>{
-    const p=f.properties;
-    const tr = document.createElement("tr");
-
-    let classe="";
-    switch(p.EstadoOcorrencia){
-      case "Despacho de 1º Alerta": classe="despacho1"; break;
-      case "Em Curso": classe="emcurso"; break;
-      case "Em Resolução": classe="resolucao"; break;
-      case "Em Conclusão": classe="conclusao"; break;
-    }
-    tr.className = classe;
-
-    tr.innerHTML = `
-      <td>${p.DataInicioOcorrencia||''}</td>
-      <td>${p.EstadoOcorrencia||''}</td>
-      <td>${getDistritoPorConcelho(p.Concelho||'')}</td>
-      <td>${p.Concelho||''}</td>
-      <td>${p.Freguesia||''}</td>
-      <td>${p.Natureza||''}</td>
-      <td>${p.Localidade||''}</td>
-      <td>${p.Operacionais||0}</td>
-      <td>${p.MeiosTerrestres||0}</td>
-      <td>${p.MeiosAereos||0}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Atualiza hora do topo a cada segundo
-setInterval(atualizarHoraAtual,1000);
-loadData();
-setInterval(loadData,120000);
+fetchData();
+setInterval(fetchData,60000); // atualiza a cada 60s
 </script>
 
 </body>
