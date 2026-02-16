@@ -108,7 +108,18 @@ th{background:#111;color:white;}
 @keyframes popIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
 /* Footer alinhado com topo */
-footer { padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto; box-sizing:border-box;}
+footer {
+  padding:10px;
+  background:#111;
+  color:#ffcc00;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  width:95%;
+  margin:0 auto;
+  box-sizing:border-box;
+  flex-wrap:wrap;
+}
 </style>
 </head>
 
@@ -167,6 +178,7 @@ footer { padding:10px; background:#111; color:#ffcc00; display:flex; justify-con
 </footer>
 
 <script>
+// ==================== JS ====================
 const API_URL="https://services-eu1.arcgis.com/VlrHb7fn5ewYhX6y/arcgis/rest/services/OcorrenciasSite/FeatureServer/0/query?f=geojson&where=1=1&outFields=*";
 
 let map=L.map('map').setView([39.5,-8],7);
@@ -202,7 +214,6 @@ function toggleAnimations(curso,alerta,aereos){
   document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
 }
 
-// Top 3 ocorrências
 function renderTopOcorrencias(data){
   const container = document.getElementById("topOcorrencias");
   container.innerHTML="";
@@ -228,11 +239,9 @@ function renderTopOcorrencias(data){
   });
 }
 
-// Render principal
 function render(data){
   markers.clearLayers();
 
-  // Dashboard
   let total=data.length;
   let alerta=data.filter(f=>f.properties.EstadoOcorrencia==="Despacho de 1º Alerta").length;
   let curso=data.filter(f=>f.properties.EstadoOcorrencia==="Em Curso").length;
@@ -254,7 +263,6 @@ function render(data){
   previousValues={total,alerta,curso,resolucao,conclusao,operacionais,terrestres,aereos};
   toggleAnimations(curso,alerta,aereos);
 
-  // Tabela
   const tbody=document.getElementById("tabelaBody");
   tbody.innerHTML="";
   data.forEach(f=>{
@@ -285,7 +293,6 @@ function render(data){
     `;
     tbody.appendChild(tr);
 
-    // Mapa
     if(f.geometry){
       const [lng,lat]=f.geometry.coordinates;
       if(p.EstadoOcorrencia==="Em Curso"){
@@ -302,10 +309,8 @@ function render(data){
   renderTopOcorrencias(data);
 }
 
-// Atualizar hora topo
 setInterval(()=>document.getElementById("currentTime").textContent=new Date().toLocaleString("pt-PT"),1000);
 
-// Carregar dados
 function load(){
   fetch(API_URL).then(r=>r.json()).then(d=>{
     allData=d.features;
