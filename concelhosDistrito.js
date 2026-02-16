@@ -57,9 +57,7 @@ const concelhosDistrito = [
   { municipio:"Calheta", distrito:"Madeira" },
   { municipio:"Calheta", distrito:"Açores" },
   { municipio:"Caminha", distrito:"Viana do Castelo" },
-  { municipio:"Campo Maior", distrito:"Portalegre" }
-];
-concelhosDistrito.push(
+  { municipio:"Campo Maior", distrito:"Portalegre" },
   { municipio:"Carrazeda de Ansiães", distrito:"Bragança" },
   { municipio:"Carregal do Sal", distrito:"Viseu" },
   { municipio:"Cascais", distrito:"Lisboa" },
@@ -122,9 +120,7 @@ concelhosDistrito.push(
   { municipio:"Macau", distrito:"Lisboa" },
   { municipio:"Macedo de Cavaleiros", distrito:"Bragança" },
   { municipio:"Madalena", distrito:"Açores" },
-  { municipio:"Mafra", distrito:"Lisboa" }
-);
-concelhosDistrito.push(
+  { municipio:"Mafra", distrito:"Lisboa" },
   { municipio:"Manteigas", distrito:"Guarda" },
   { municipio:"Marinha Grande", distrito:"Leiria" },
   { municipio:"Mação", distrito:"Santarém" },
@@ -181,9 +177,7 @@ concelhosDistrito.push(
   { municipio:"Moimenta da Serra", distrito:"Guarda" },
   { municipio:"Murtosa", distrito:"Aveiro" },
   { municipio:"Mesquita", distrito:"Lisboa" },
-  { municipio:"Mangualde", distrito:"Viseu" }
-);
-concelhosDistrito.push(
+  { municipio:"Mangualde", distrito:"Viseu" },
   { municipio:"Nelas", distrito:"Viseu" },
   { municipio:"Nisa", distrito:"Portalegre" },
   { municipio:"Nordeste", distrito:"Açores" },
@@ -284,10 +278,7 @@ concelhosDistrito.push(
   { municipio:"Vinhais", distrito:"Bragança" },
   { municipio:"Vizela", distrito:"Braga" },
   { municipio:"Vouzela", distrito:"Viseu" },
-  { municipio:"Évora", distrito:"Évora" }
-);
-concelhosDistrito.push(
-  // Madeira
+  { municipio:"Évora", distrito:"Évora" },
   { municipio:"Funchal", distrito:"Madeira" },
   { municipio:"Santa Cruz", distrito:"Madeira" },
   { municipio:"Machico", distrito:"Madeira" },
@@ -319,4 +310,4 @@ concelhosDistrito.push(
   { municipio:"Lajes das Flores", distrito:"Açores" },
   { municipio:"Corvo", distrito:"Açores" }
 );
-]
+];
