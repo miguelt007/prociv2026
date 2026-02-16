@@ -290,7 +290,6 @@ const concelhosDistrito = [
   { municipio:"Ribeira Brava", distrito:"Madeira" },
   { municipio:"Câmara de Lobos", distrito:"Madeira" },
   { municipio:"Porto Santo", distrito:"Madeira" },
-// Açores
   { municipio:"Ponta Delgada", distrito:"Açores" },
   { municipio:"Lagoa", distrito:"Açores" },
   { municipio:"Ribeira Grande", distrito:"Açores" },
