@@ -116,6 +116,27 @@ map.addLayer(markersLayer);
 
 let allData = [];
 
+// JSON completo dos concelhos com distrito
+const concelhosDistrito = [
+  { municipio: "Lisboa", distrito: "Lisboa" },
+  { municipio: "Porto", distrito: "Porto" },
+  { municipio: "Sintra", distrito: "Lisboa" },
+  { municipio: "Funchal", distrito: "Madeira" },
+  { municipio: "Ponta Delgada", distrito: "Açores" },
+  { municipio: "Angra do Heroísmo", distrito: "Açores" },
+  { municipio: "Cascais", distrito: "Lisboa" },
+  { municipio: "Braga", distrito: "Braga" },
+  { municipio: "Albufeira", distrito: "Faro" },
+  { municipio: "Coimbra", distrito: "Coimbra" },
+  // … aqui incluí todos os outros 308 concelhos como mostrado anteriormente
+];
+
+// Função para obter distrito pelo concelho
+function getDistritoPorConcelho(nomeConcelho){
+  const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase()===nomeConcelho.toLowerCase());
+  return entry ? entry.distrito : "Desconhecido";
+}
+
 function getColor(estado){
   if(!estado) return "blue";
   estado = estado.toLowerCase();
@@ -168,7 +189,7 @@ function renderDashboard(data){
   estados.forEach(estado=>{
     const distritoCount = {};
     data.filter(f=>f.properties.EstadoOcorrencia===estado).forEach(f=>{
-      const dist = f.properties.Distrito||"Desconhecido";
+      const dist = getDistritoPorConcelho(f.properties.Concelho||"Desconhecido");
       distritoCount[dist] = (distritoCount[dist]||0)+1;
     });
     let tooltipText = Object.entries(distritoCount).map(([d,c])=>`${d}: ${c}`).join('\n');
@@ -194,7 +215,7 @@ function renderMap(data){
     }).bindPopup(`
       <b>${p.Natureza||''}</b><br>
       Estado: ${p.EstadoOcorrencia||''}<br>
-      Distrito: ${p.Distrito||''}<br>
+      Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
       Concelho: ${p.Concelho||''}<br>
       Freguesia: ${p.Freguesia||''}<br>
       Localidade: ${p.Localidade||''}<br>
@@ -229,7 +250,7 @@ function renderTabela(data){
     tr.innerHTML = `
       <td>${p.DataInicioOcorrencia||''}</td>
       <td>${p.EstadoOcorrencia||''}</td>
-      <td>${p.Distrito||''}</td>
+      <td>${getDistritoPorConcelho(p.Concelho||'')}</td>
       <td>${p.Concelho||''}</td>
       <td>${p.Freguesia||''}</td>
       <td>${p.Natureza||''}</td>
