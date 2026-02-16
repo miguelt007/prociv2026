@@ -17,17 +17,29 @@ header { padding:15px; background:#111; color:#ffcc00; display:flex; justify-con
 header h1 { margin:0; font-size:1.5em; }
 header .last-update { font-size:0.9em; color:#fff; }
 
-.cards { display:flex; flex-wrap:wrap; padding:10px; gap:10px; justify-content:center; }
-.card { flex:1 1 150px; color:white; padding:20px; border-radius:8px; text-align:center; min-width:150px; max-width:200px; box-shadow:0 3px 6px rgba(0,0,0,0.2); }
-.card h2 { margin:5px 0 0; font-size:2em; }
-.card p { margin:0; font-weight:bold; }
-
-.yellow { background:#FFD700; color:#000; }   /* Despacho 1º Alerta */
-.orange { background:orange; }               /* Despacho */
-.red { background:red; }                      /* Em Curso */
-.blue { background:blue; }                    /* Em Resolução */
-.green { background:green; }                  /* Em Conclusão */
-.gray { background:#333; }                    /* Total Ocorrências e Totais gerais */
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+}
+.card {
+  flex: 1 1 180px;
+  max-width: 220px;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+.card h2 { margin: 5px 0 0; font-size: 1.8em; }
+.yellow { background:#FFD700; color:#000; }
+.orange { background:orange; }
+.red { background:red; }
+.blue { background:blue; }
+.green { background:green; }
+.gray { background:#333; }
 
 #map { height:400px; margin:10px; border-radius:6px; }
 
@@ -38,8 +50,8 @@ tr:nth-child(even) { background:#f9f9f9; }
 tr:hover { background:#eee; }
 
 @media(max-width:900px){
-  .cards { flex-direction:row; flex-wrap:wrap; justify-content:center; }
-  .card { flex:1 1 120px; }
+  .cards { flex-direction: row; justify-content: center; }
+  .card { flex: 1 1 140px; max-width: 180px; }
 }
 </style>
 </head>
