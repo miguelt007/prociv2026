@@ -41,14 +41,21 @@ table { width:95%; margin:10px auto 20px auto; border-collapse:collapse; backgro
 th,td{ padding:8px; border-bottom:1px solid #ddd; text-align:left;}
 th{background:#111;color:white;}
 
-/* Cores apenas no texto do Estado */
-td.estado { font-weight:bold; }
-td.estado.despacho1 { color: #FFD700; }
-td.estado.emcurso { color: red; }
-td.estado.resolucao { color: blue; }
-td.estado.conclusao { color: green; }
-td.estado.chegada { color: orange; }
-td.estado.vigilancia { color: gray; }
+.estado-badge {
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:4px;
+  color:white;
+  font-weight:bold;
+  font-size:0.9em;
+}
+
+.estado-despacho1 { background:#FFD700; color:#000; }
+.estado-emcurso   { background:red; }
+.estado-resolucao { background:blue; }
+.estado-conclusao { background:green; }
+.estado-chegada   { background:orange; }
+.estado-vigilancia{ background:gray; }
 
 .top-ocorrencias {
   display:flex;
@@ -100,8 +107,7 @@ td.estado.vigilancia { color: gray; }
 .pop{animation:popIcon 2s infinite;}
 @keyframes popIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
-footer { text-align:center; padding:10px; background:#111; color:#ffcc00; }
-footer div { display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto; }
+footer { text-align:center; padding:10px; background:#111; color:#ffcc00; display:flex; justify-content:space-between; align-items:center; width:95%; margin:0 auto;}
 </style>
 </head>
 
@@ -156,9 +162,7 @@ footer div { display:flex; justify-content:space-between; align-items:center; wi
 </table>
 
 <footer>
-  <div>
-    <div>Fonte de dados: ANEPC</div>
-  </div>
+<div>Fonte de dados: ANEPC</div>
 </footer>
 
 <script>
@@ -197,7 +201,7 @@ document.querySelector(".fa-bell").style.animation=alerta>0?"":"none";
 document.querySelector(".fa-helicopter").style.animation=aereos>0?"":"none";
 }
 
-// Render Top 3 ocorrências
+// Top 3 ocorrências
 function renderTopOcorrencias(data){
   const container = document.getElementById("topOcorrencias");
   container.innerHTML="";
@@ -256,20 +260,19 @@ function render(data){
     const p=f.properties;
     let tr=document.createElement("tr");
 
-    // Classe do Estado
     let estadoClasse="";
     switch(p.EstadoOcorrencia){
-      case "Despacho de 1º Alerta": estadoClasse="despacho1"; break;
-      case "Em Curso": estadoClasse="emcurso"; break;
-      case "Em Resolução": estadoClasse="resolucao"; break;
-      case "Em Conclusão": estadoClasse="conclusao"; break;
-      case "Chegada ao TO": estadoClasse="chegada"; break;
-      case "Vigilância": estadoClasse="vigilancia"; break;
+      case "Despacho de 1º Alerta": estadoClasse="estado-despacho1"; break;
+      case "Em Curso": estadoClasse="estado-emcurso"; break;
+      case "Em Resolução": estadoClasse="estado-resolucao"; break;
+      case "Em Conclusão": estadoClasse="estado-conclusao"; break;
+      case "Chegada ao TO": estadoClasse="estado-chegada"; break;
+      case "Vigilância": estadoClasse="estado-vigilancia"; break;
     }
 
     tr.innerHTML=`
       <td>${p.DataInicioOcorrencia||""}</td>
-      <td class="estado ${estadoClasse}">${p.EstadoOcorrencia||""}</td>
+      <td><span class="estado-badge ${estadoClasse}">${p.EstadoOcorrencia||""}</span></td>
       <td>${getDistrito(p.Concelho)}</td>
       <td>${p.Concelho||""}</td>
       <td>${p.Freguesia||""}</td>
