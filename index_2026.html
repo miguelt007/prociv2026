@@ -56,6 +56,16 @@ footer { text-align:center; padding:10px; font-size:0.9em; color:#555; backgroun
 @media(max-width:1200px){ .card { width:22%; } }
 @media(max-width:900px){ .card { width:45%; } }
 @media(max-width:600px){ .cards { flex-direction: column; align-items: center; } .card { width:90%; } }
+
+/* Ícone SVG pulsante */
+.blinking-icon circle {
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0% { fill-opacity: 1; r: 8; }
+  50% { fill-opacity: 0.3; r: 12; }
+  100% { fill-opacity: 1; r: 8; }
+}
 </style>
 </head>
 <body>
@@ -117,7 +127,6 @@ map.addLayer(markersLayer);
 
 let allData = [];
 
-// Função para obter distrito pelo concelho
 function getDistritoPorConcelho(nomeConcelho){
   const entry = concelhosDistrito.find(c=>c.municipio.toLowerCase()===nomeConcelho.toLowerCase());
   return entry ? entry.distrito : "Desconhecido";
@@ -133,7 +142,6 @@ function getColor(estado){
   return "blue";
 }
 
-// Atualiza hora em tempo real (com dia)
 function atualizarHoraAtual(){
   const now = new Date();
   const dia = now.toLocaleDateString('pt-PT');
@@ -141,7 +149,6 @@ function atualizarHoraAtual(){
   document.getElementById("currentTime").textContent = `${dia} ${hora}`;
 }
 
-// Atualiza hora da última atualização
 function atualizarHoraAtualizacao(){
   const now = new Date();
   const datetime = now.toLocaleString('pt-PT');
@@ -173,42 +180,50 @@ function renderDashboard(data){
 
 function renderMap(data){
   markersLayer.clearLayers();
-
   data.forEach(f=>{
     const p = f.properties;
     const [lng,lat] = f.geometry.coordinates;
 
-    const color = getColor(p.EstadoOcorrencia);
-    const marker = L.circleMarker([lat,lng],{
-      radius: 8,
-      color: color,
-      fillColor: color,
-      fillOpacity: 0.9
-    }).bindPopup(`
-      <b>${p.Natureza||''}</b><br>
-      Estado: ${p.EstadoOcorrencia||''}<br>
-      Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
-      Concelho: ${p.Concelho||''}<br>
-      Freguesia: ${p.Freguesia||''}<br>
-      Localidade: ${p.Localidade||''}<br>
-      Data Criação: ${p.DataInicioOcorrencia||''}<br>
-      Operacionais: ${p.Operacionais||0}<br>
-      Meios Terrestres: ${p.MeiosTerrestres||0}<br>
-      Meios Aéreos: ${p.MeiosAereos||0}
-    `);
-
-    markersLayer.addLayer(marker);
-
-    // Faz os marcadores "Em Curso" piscarem
     if(p.EstadoOcorrencia === "Em Curso"){
-      let visible = true;
-      setInterval(()=>{
-        marker.setStyle({
-          fillOpacity: visible ? 0.9 : 0.2,
-          radius: visible ? 8 : 12
-        });
-        visible = !visible;
-      }, 700);
+      // SVG pulsante
+      const svgIcon = L.divIcon({
+        className: 'blinking-icon',
+        html: `<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="8" fill="red"/></svg>`,
+        iconSize: [30,30],
+        iconAnchor: [15,15]
+      });
+      L.marker([lat,lng], { icon: svgIcon }).bindPopup(`
+        <b>${p.Natureza||''}</b><br>
+        Estado: ${p.EstadoOcorrencia||''}<br>
+        Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
+        Concelho: ${p.Concelho||''}<br>
+        Freguesia: ${p.Freguesia||''}<br>
+        Localidade: ${p.Localidade||''}<br>
+        Data Criação: ${p.DataInicioOcorrencia||''}<br>
+        Operacionais: ${p.Operacionais||0}<br>
+        Meios Terrestres: ${p.MeiosTerrestres||0}<br>
+        Meios Aéreos: ${p.MeiosAereos||0}
+      `).addTo(markersLayer);
+    } else {
+      const color = getColor(p.EstadoOcorrencia);
+      const marker = L.circleMarker([lat,lng],{
+        radius: 8,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.9
+      }).bindPopup(`
+        <b>${p.Natureza||''}</b><br>
+        Estado: ${p.EstadoOcorrencia||''}<br>
+        Distrito: ${getDistritoPorConcelho(p.Concelho||'')}<br>
+        Concelho: ${p.Concelho||''}<br>
+        Freguesia: ${p.Freguesia||''}<br>
+        Localidade: ${p.Localidade||''}<br>
+        Data Criação: ${p.DataInicioOcorrencia||''}<br>
+        Operacionais: ${p.Operacionais||0}<br>
+        Meios Terrestres: ${p.MeiosTerrestres||0}<br>
+        Meios Aéreos: ${p.MeiosAereos||0}
+      `);
+      markersLayer.addLayer(marker);
     }
   });
 }
@@ -248,7 +263,6 @@ function renderTabela(data){
   });
 }
 
-// Atualiza hora do topo a cada segundo
 setInterval(atualizarHoraAtual,1000);
 loadData();
 setInterval(loadData,120000);
