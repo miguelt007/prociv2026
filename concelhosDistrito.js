@@ -216,6 +216,7 @@ const concelhosDistrito = [
   { municipio:"Penamacor", distrito:"Castelo Branco" },
   { municipio:"Penedono", distrito:"Viseu" },
   { municipio:"Penela", distrito:"Coimbra" },
+  { municipio:"Peso da Régua", distrito:"Vila Real" },
   { municipio:"Pombal", distrito:"Leiria" },
   { municipio:"Ponta Delgada", distrito:"Açores" },
   { municipio:"Ponte de Lima", distrito:"Viana do Castelo" },
