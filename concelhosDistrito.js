@@ -138,6 +138,7 @@ const concelhosDistrito = [
   { municipio:"Mirandela", distrito:"Bragança" },
   { municipio:"Moimenta da Beira", distrito:"Viseu" },
   { municipio:"Moimenta de Maceira Dão", distrito:"Viseu" },
+  { municipio:"Moita", distrito:"Setúbal" },
   { municipio:"Mondim de Basto", distrito:"Vila Real" },
   { municipio:"Monchique", distrito:"Faro" },
   { municipio:"Montalegre", distrito:"Vila Real" },
