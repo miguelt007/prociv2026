@@ -264,6 +264,7 @@ const concelhosDistrito = [
   { municipio:"Sobral de Monte Agraço", distrito:"Lisboa" },
   { municipio:"Sátão", distrito:"Viseu" },
   { municipio:"Tarouca", distrito:"Viseu" },
+  { municipio:"Tábua", distrito:"Coimbra" },
   { municipio:"Tavira", distrito:"Faro" },
   { municipio:"Terras de Bouro", distrito:"Braga" },
   { municipio:"Tomar", distrito:"Santarém" },
