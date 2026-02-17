@@ -133,6 +133,7 @@ const concelhosDistrito = [
   { municipio:"Marinha Grande", distrito:"Leiria" },
   { municipio:"Mação", distrito:"Santarém" },
   { municipio:"Mangualde", distrito:"Viseu" },
+  { municipio:"Maia", distrito:"Porto" },
   { municipio:"Mértola", distrito:"Beja" },
   { municipio:"Mesão Frio", distrito:"Vila Real" },
   { municipio:"Miranda do Douro", distrito:"Bragança" },
