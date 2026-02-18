@@ -214,6 +214,7 @@ const concelhosDistrito = [
   { municipio:"Penacova", distrito:"Coimbra" },
   { municipio:"Penafiel", distrito:"Porto" },
   { municipio:"Penamacor", distrito:"Castelo Branco" },
+  { municipio:"Peniche", distrito:"Leiria" },
   { municipio:"Penedono", distrito:"Viseu" },
   { municipio:"Penela", distrito:"Coimbra" },
   { municipio:"Peso da Régua", distrito:"Vila Real" },
