@@ -223,6 +223,7 @@ const concelhosDistrito = [
   { municipio:"Ponta Delgada", distrito:"Açores" },
   { municipio:"Ponte de Lima", distrito:"Viana do Castelo" },
   { municipio:"Ponta do Sol", distrito:"Madeira" },
+  { municipio:"Ponte de Sor", distrito:"Portalegre" },
   { municipio:"Ponte da Barca", distrito:"Viana do Castelo" },
   { municipio:"Portalegre", distrito:"Portalegre" },
   { municipio:"Portel", distrito:"Évora" },
