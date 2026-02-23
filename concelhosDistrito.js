@@ -275,6 +275,7 @@ const concelhosDistrito = [
   { municipio:"Sátão", distrito:"Viseu" },
   { municipio:"Tarouca", distrito:"Viseu" },
   { municipio:"Tábua", distrito:"Coimbra" },
+  { municipio:"Tabuaço", distrito:"Viseu" },
   { municipio:"Tavira", distrito:"Faro" },
   { municipio:"Terras de Bouro", distrito:"Braga" },
   { municipio:"Tomar", distrito:"Santarém" },
