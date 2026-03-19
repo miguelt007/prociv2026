@@ -197,6 +197,7 @@ const concelhosDistrito = [
   { municipio:"Nelas", distrito:"Viseu" },
   { municipio:"Nisa", distrito:"Portalegre" },
   { municipio:"Nordeste", distrito:"Açores" },
+  { municipio:"Odivelas", distrito:"Lisboa" },
   { municipio:"Oeiras", distrito:"Lisboa" },
   { municipio:"Oleiros", distrito:"Castelo Branco" },
   { municipio:"Oliveira de Azeméis", distrito:"Aveiro" },
