@@ -102,6 +102,7 @@ const concelhosDistrito = [
   { municipio:"Figueiró dos Vinhos", distrito:"Leiria" },
   { municipio:"Fornos de Algodres", distrito:"Guarda" },
   { municipio:"Freixo de Espada à Cinta", distrito:"Bragança" },
+  { municipio:"Fronteira", distrito:"Portalegre" },
   { municipio:"Funchal", distrito:"Madeira" },
   { municipio:"Gavião", distrito:"Portalegre" },
   { municipio:"Góis", distrito:"Coimbra" },
