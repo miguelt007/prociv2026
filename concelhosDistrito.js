@@ -299,6 +299,7 @@ const concelhosDistrito = [
   { municipio:"Viana do Castelo", distrito:"Viana do Castelo" },
   { municipio:"Vidigueira", distrito:"Beja" },
   { municipio:"Vieira do Minho", distrito:"Braga" },
+  { municipio:"Vimioso", distrito:"Bragança" },
   { municipio:"Vila do Bispo", distrito:"Faro" },
   { municipio:"Vila Flor", distrito:"Bragança" },
   { municipio:"Vila do Conde", distrito:"Porto" },
