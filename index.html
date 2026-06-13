@@ -210,7 +210,7 @@ function populateFilters() {
         if (p.Regiao) regiaoSet.add(p.Regiao);
         if (p.Concelho) concelhoSet.add(p.Concelho);
         if (p.Freguesia) freguesiaSet.add(p.Freguesia);
-        if (p.Tipo) tipoSet.add(p.Tipo);
+        if (p.Natureza) tipoSet.add(p.Natureza);
         if (p.EstadoOcorrencia) estadoSet.add(p.EstadoOcorrencia);
     });
     const addOptions = (selectId, values) => {
@@ -238,7 +238,7 @@ function applyFilters() {
         return (!fRegiao || p.Regiao === fRegiao) &&
                (!fConcelho || p.Concelho === fConcelho) &&
                (!fFreguesia || p.Freguesia === fFreguesia) &&
-               (!fTipo || p.Tipo === fTipo) &&
+               (!fTipo || p.Natureza === fTipo) &&
                (!fEstado || p.EstadoOcorrencia === fEstado);
     });
 
@@ -289,7 +289,7 @@ function updateDashboard(features) {
                 <td>${p.Concelho||"-"}</td>
                 <td>${p.Freguesia||"-"}</td>
                 <td>${p.Localidade||"-"}</td>
-                <td>${p.Tipo||"-"}</td>
+                <td>${p.Natureza||"-"}</td>
                 <td>${getEstadoBadge(p.EstadoOcorrencia)}</td>
                 <td>${p.Operacionais||0}</td>
                 <td>${p.MeiosTerrestres||0}</td>
@@ -306,7 +306,7 @@ function updateDashboard(features) {
                 <b>Concelho:</b> ${p.Concelho||'-'}<br>
                 <b>Freguesia:</b> ${p.Freguesia||'-'}<br>
                 <b>Localização:</b> ${p.Localidade||'-'}<br>
-                <b>Natureza:</b> ${p.Tipo||'-'}<br>
+                <b>Natureza:</b> ${p.Natureza||'-'}<br>
                 <b>Estado:</b> ${p.EstadoOcorrencia||'-'}<br>
                 <b>Operacionais:</b> ${p.Operacionais||0}<br>
                 <b>Meios Terrestres:</b> ${p.MeiosTerrestres||0}<br>
